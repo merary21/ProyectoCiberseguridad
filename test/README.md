@@ -132,10 +132,17 @@ Después del procesamiento, el sistema genera los siguientes resultados:
 - Ollama instalado.
 - Modelo Llama 3.2 descargado.
 
-### Instalación de dependencias
+### Levantar el entorno virtual
 
 ```bash
-pip install -r requirements.txt
+.venv\Scripts\Activate.ps1
+```
+
+### Instalación de dependencias
+
+
+```bash
+pip install -r test/requirements.txt
 ```
 
 ### Descargar el modelo de lenguaje
@@ -184,22 +191,6 @@ Los documentos disponibles son:
 - [Plan de mejora](docs/plan-mejora.md)
 
 En estos documentos se describe el estado actual del proyecto, la arquitectura implementada, la arquitectura objetivo propuesta, los riesgos técnicos identificados y el plan de mejora que se desarrollará durante las siguientes semanas del módulo.
-
----
-
-## 12. Limitaciones conocidas del prototipo
-
-Actualmente el proyecto corresponde a un prototipo funcional desarrollado con fines académicos, por lo que aún presenta algunas limitaciones.
-
-- El modelo de detección depende de la calidad del conjunto de datos utilizado para el entrenamiento.
-- El asistente inteligente requiere que Ollama se encuentre instalado y ejecutándose localmente.
-- La aplicación únicamente detecta anomalías y genera alertas; no realiza acciones automáticas para bloquear ataques.
-- No incorpora autenticación ni control de acceso para usuarios.
-- No utiliza una base de datos para almacenar el historial de eventos.
-- El despliegue únicamente se realiza en un entorno local.
-- Todavía no cuenta con pruebas automatizadas ni con integración continua.
-
-Estas limitaciones forman parte del proceso de mejora que será desarrollado durante las siguientes semanas del proyecto.
 
 ---
 
