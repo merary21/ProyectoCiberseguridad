@@ -177,11 +177,11 @@ La documentación técnica del proyecto se encuentra organizada dentro de la car
 
 Los documentos disponibles son:
 
-- `diagnostico-semana-1.md`
-- `arquitectura-actual.md`
-- `arquitectura-objetivo.md`
-- `riesgos-tecnicos.md`
-- `plan-mejora.md`
+- [Diagnóstico técnico](docs/diagnostico-semana-1.md)
+- [Arquitectura actual](docs/arquitectura-actual.md)
+- [Arquitectura objetivo](docs/arquitectura-objetivo.md)
+- [Riesgos técnicos y deuda técnica](docs/riesgos-tecnicos.md)
+- [Plan de mejora](docs/plan-mejora.md)
 
 En estos documentos se describe el estado actual del proyecto, la arquitectura implementada, la arquitectura objetivo propuesta, los riesgos técnicos identificados y el plan de mejora que se desarrollará durante las siguientes semanas del módulo.
 
