@@ -218,4 +218,4 @@ Estas limitaciones serán abordadas en la arquitectura objetivo y en el plan de 
 
 Las evidencias de la interfaz y ejecución del proyecto pueden consultarse en el siguiente documento:
 
-[📄 Evidencias.pdf](docs/Evidencias.pdf)
+[📄 Evidencias.pdf](Evidencias.pdf)
