@@ -203,7 +203,7 @@ Estas limitaciones forman parte del proceso de mejora que será desarrollado dur
 
 ---
 
-## ## 12. Limitaciones conocidas del prototipo
+## 12. Limitaciones conocidas del prototipo
 
 Actualmente el proyecto corresponde a un prototipo funcional desarrollado con fines académicos, por lo que aún presenta algunas limitaciones técnicas que serán abordadas durante el desarrollo del módulo.
 
