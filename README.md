@@ -189,6 +189,7 @@ Los documentos disponibles son:
 - [Arquitectura objetivo](docs/arquitectura-objetivo.md)
 - [Riesgos técnicos y deuda técnica](docs/riesgos-tecnicos.md)
 - [Plan de mejora](docs/plan-mejora.md)
+- [API](docs/api.md)
 
 En estos documentos se describe el estado actual del proyecto, la arquitectura implementada, la arquitectura objetivo propuesta, los riesgos técnicos identificados y el plan de mejora que se desarrollará durante las siguientes semanas del módulo.
 
@@ -227,3 +228,53 @@ Con el propósito de superar las limitaciones identificadas en el prototipo actu
 | **Semana 6** | Implementar autenticación de usuarios, fortalecer la seguridad, actualizar la documentación técnica y preparar la defensa final del proyecto. | Atiende las limitaciones relacionadas con la seguridad, documentación y presentación del proyecto. |
 
 Al finalizar estas mejoras, se espera contar con una aplicación más robusta, organizada y preparada para un posible despliegue, manteniendo la capacidad de detectar anomalías mediante Inteligencia Artificial y proporcionando una solución más completa para el monitoreo de aplicaciones web.
+## API
+
+La aplicación cuenta con una API para analizar solicitudes web mediante un modelo de Inteligencia Artificial.
+
+### Flujo de funcionamiento
+
+```text
+Solicitud web
+      ↓
+Validación de datos
+      ↓
+Procesamiento
+      ↓
+Modelo de IA
+      ↓
+Resultado del análisis
+      ↓
+Alerta o solicitud normal
+```
+
+### Documentación de la API
+
+La documentación detallada de los endpoints, datos de entrada, respuestas y errores se encuentra en:
+
+```text
+docs/api.md
+```
+
+### Manejo de errores
+
+El sistema implementa validaciones y manejo de excepciones para evitar fallos durante el procesamiento de las solicitudes.
+
+Los errores son registrados y devueltos mediante respuestas estructuradas en formato JSON.
+
+### Pruebas automatizadas
+
+El proyecto cuenta con pruebas automatizadas para validar:
+
+* Procesamiento correcto de solicitudes.
+* Validación de datos.
+* Detección de resultados normales.
+* Detección de posibles alertas.
+* Manejo de errores.
+
+Las pruebas pueden ejecutarse mediante:
+
+```bash
+pytest
+```
+
