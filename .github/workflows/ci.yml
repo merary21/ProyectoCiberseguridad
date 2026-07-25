@@ -2,10 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - semana-2-api
 
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   test:
