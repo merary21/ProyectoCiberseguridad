@@ -1,24 +1,30 @@
 from fastapi import FastAPI
-from schemas import WebRequest
+from API.schemas import WebRequest
 
 import joblib
 from datetime import datetime
+
+from pathlib import Path
 
 
 # ==============================
 # CARGA DEL MODELO
 # ==============================
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+MODELO_DIR = BASE_DIR / "modelo_guardado"
+
+
 modelo = joblib.load(
-    "../modelo_guardado/isolation_forest_model.pkl"
+    MODELO_DIR / "isolation_forest_model.pkl"
 )
 
 scaler = joblib.load(
-    "../modelo_guardado/scaler.pkl"
+    MODELO_DIR / "scaler.pkl"
 )
 
 le_metodo = joblib.load(
-    "../modelo_guardado/label_encoder_metodo.pkl"
+    MODELO_DIR / "label_encoder_metodo.pkl"
 )
 
 
