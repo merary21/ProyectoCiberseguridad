@@ -31,4 +31,5 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Ejecutar pruebas
-        run: pytest
+        run: |
+           PYTHONPATH=. pytest
