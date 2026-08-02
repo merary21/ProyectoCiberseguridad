@@ -1,0 +1,6 @@
+{
+  "estado": "exitoso",
+  "resultado": "ALERTA",
+  "nivel_riesgo": "ALTO",
+  "mensaje": "Comportamiento sospechoso detectado"
+}
