@@ -1,0 +1,7 @@
+services:
+  proyecto-ciberseguridad:
+    build: .
+    container_name: proyecto-ciberseguridad
+    ports:
+      - "8501:8501"
+    restart: unless-stopped

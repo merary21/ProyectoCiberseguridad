@@ -1,0 +1,27 @@
+# Entornos virtuales
+.venv/
+venv/
+
+# Caché
+__pycache__/
+*.pyc
+
+# Git
+.git/
+.github/
+
+# VS Code
+.vscode/
+
+# Variables de entorno
+.env
+.env.*
+
+# Pruebas
+.pytest_cache/
+
+# Notebook
+*.ipynb
+
+# Logs
+*.log
