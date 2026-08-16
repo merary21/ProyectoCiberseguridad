@@ -10,6 +10,47 @@ ARCHIVO_BASE = "linea_base.json"
 
 def guardar_linea_base(metricas):
 
+    # ============================================================
+    # CALCULAR PORCENTAJE DE ANOMALÍAS
+    # ============================================================
+
+    total_analizado = metricas.get(
+        "total_analizado",
+        0
+    )
+
+    anomalias = metricas.get(
+        "anomalias",
+        0
+    )
+
+    porcentaje_anomalias = (
+        (anomalias / total_analizado) * 100
+        if total_analizado > 0
+        else 0
+    )
+
+
+    # ============================================================
+    # CALCULAR PORCENTAJE DE TRÁFICO NORMAL
+    # ============================================================
+
+    normales = metricas.get(
+        "normales",
+        0
+    )
+
+    porcentaje_normales = (
+        (normales / total_analizado) * 100
+        if total_analizado > 0
+        else 0
+    )
+
+
+    # ============================================================
+    # CREAR LÍNEA BASE
+    # ============================================================
+
     datos = {
 
         "fecha":
@@ -17,11 +58,13 @@ def guardar_linea_base(metricas):
                 "%Y-%m-%d %H:%M:%S"
             ),
 
+
         # ========================================
         # AMBIENTE
         # ========================================
 
         "ambiente": {
+
             "sistema_operativo":
                 platform.system()
                 + " "
@@ -43,6 +86,7 @@ def guardar_linea_base(metricas):
         # ========================================
 
         "endpoint": {
+
             "tipo":
                 "Interfaz Streamlit",
 
@@ -102,7 +146,7 @@ def guardar_linea_base(metricas):
             "Streamlit + Python",
 
         "cantidad_solicitudes":
-            metricas["total_analizado"],
+            total_analizado,
 
 
         # ========================================
@@ -110,36 +154,70 @@ def guardar_linea_base(metricas):
         # ========================================
 
         "anomalias":
-            metricas["anomalias"],
+            anomalias,
 
         "normales":
-            metricas["normales"],
+            normales,
 
         "alertas":
-            metricas["alertas"],
+            metricas.get(
+                "alertas",
+                0
+            ),
 
         "errores":
-            metricas["errores"],
+            metricas.get(
+                "errores",
+                0
+            ),
+
+        "porcentaje_anomalias":
+            porcentaje_anomalias,
+
+        "porcentaje_normales":
+            porcentaje_normales,
 
         "tiempo_promedio":
-            metricas["tiempo_promedio"],
+            metricas.get(
+                "tiempo_promedio",
+                0
+            ),
 
         "p50":
-            metricas["p50"],
+            metricas.get(
+                "p50",
+                0
+            ),
 
         "p95":
-            metricas["p95"],
+            metricas.get(
+                "p95",
+                0
+            ),
 
         "tiempo_maximo":
-            metricas["tiempo_maximo"],
+            metricas.get(
+                "tiempo_maximo",
+                0
+            ),
 
         "tasa_error":
-            metricas["tasa_error"],
+            metricas.get(
+                "tasa_error",
+                0
+            ),
 
         "riesgo":
-            metricas["riesgo"]
+            metricas.get(
+                "riesgo",
+                0
+            )
     }
 
+
+    # ============================================================
+    # GUARDAR ARCHIVO JSON
+    # ============================================================
 
     with open(
         ARCHIVO_BASE,
@@ -150,7 +228,8 @@ def guardar_linea_base(metricas):
         json.dump(
             datos,
             archivo,
-            indent=4
+            indent=4,
+            ensure_ascii=False
         )
 
 
@@ -159,6 +238,10 @@ def guardar_linea_base(metricas):
 
 def cargar_linea_base():
 
+    # ============================================================
+    # VERIFICAR SI EXISTE EL ARCHIVO
+    # ============================================================
+
     if not os.path.exists(
         ARCHIVO_BASE
     ):
@@ -166,12 +249,61 @@ def cargar_linea_base():
         return None
 
 
+    # ============================================================
+    # CARGAR JSON
+    # ============================================================
+
     with open(
         ARCHIVO_BASE,
         "r",
         encoding="utf-8"
     ) as archivo:
 
-        return json.load(
+        datos = json.load(
             archivo
         )
+
+
+    # ============================================================
+    # COMPATIBILIDAD CON LÍNEAS BASE ANTIGUAS
+    # ============================================================
+
+    if "porcentaje_anomalias" not in datos:
+
+        total = datos.get(
+            "cantidad_solicitudes",
+            0
+        )
+
+        anomalias = datos.get(
+            "anomalias",
+            0
+        )
+
+        datos["porcentaje_anomalias"] = (
+            (anomalias / total) * 100
+            if total > 0
+            else 0
+        )
+
+
+    if "porcentaje_normales" not in datos:
+
+        total = datos.get(
+            "cantidad_solicitudes",
+            0
+        )
+
+        normales = datos.get(
+            "normales",
+            0
+        )
+
+        datos["porcentaje_normales"] = (
+            (normales / total) * 100
+            if total > 0
+            else 0
+        )
+
+
+    return datos

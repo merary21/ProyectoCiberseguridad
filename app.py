@@ -12,7 +12,6 @@ import time
 import requests
 
 from metricas import MetricasSOC
-from linea_base import guardar_linea_base, cargar_linea_base
 from historial import guardar_resultado, cargar_historial
 
 
@@ -202,6 +201,24 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+
+
+# ============================================================
+# ACCESO A MÉTRICAS Y EVOLUCIÓN
+# ============================================================
+
+st.markdown("### 📊 Centro de Métricas")
+
+if st.button(
+    "📊 Ver Métricas, Línea Base y Evolución",
+    use_container_width=True
+):
+    st.switch_page("pages/metricas.py")
+
+st.caption(
+    "Consulta la línea base, indicadores de detección, "
+    "historial de mediciones y evolución del riesgo y anomalías."
+)
 
 # ============================================================
 # CARGA DEL MODELO
@@ -654,174 +671,6 @@ col5.metric(
 
 
 # ============================================================
-# INDICADORES DE DETECCIÓN
-# ============================================================
-
-st.markdown(
-    "### 📈 Indicadores de Detección"
-)
-
-col1, col2 = st.columns(2)
-
-with col1:
-
-    st.metric(
-        "Porcentaje de anomalías",
-        f"{porcentaje_anomalias:.2f}%"
-    )
-
-with col2:
-
-    st.metric(
-        "Porcentaje de tráfico normal",
-        f"{porcentaje_normales:.2f}%"
-    )
-# ============================================================
-# MÉTRICAS DE RENDIMIENTO
-# ============================================================
-
-st.markdown(
-    "### ⚡ Métricas de Rendimiento"
-)
-
-p50 = resumen_metricas["p50"]
-p95 = resumen_metricas["p95"]
-tiempo_maximo = resumen_metricas["tiempo_maximo"]
-tasa_error = resumen_metricas["tasa_error"]
-
-col1, col2, col3, col4 = st.columns(4)
-
-col1.metric(
-    "P50",
-    f"{p50:.6f}s"
-)
-
-col2.metric(
-    "P95",
-    f"{p95:.6f}s"
-)
-
-col3.metric(
-    "Tiempo máximo",
-    f"{tiempo_maximo:.6f}s"
-)
-
-col4.metric(
-    "Tasa de error",
-    f"{tasa_error:.2f}%"
-)
-
-
-# ============================================================
-# LÍNEA BASE
-# ============================================================
-
-st.markdown("### 📏 Línea Base del SOC-AI")
-
-base_actual = cargar_linea_base()
-
-
-if base_actual:
-
-    st.info(
-        f"📌 Línea base registrada el "
-        f"{base_actual['fecha']}"
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "Anomalías base",
-        f"{base_actual['porcentaje_anomalias']:.2f}%"
-    )
-
-    col2.metric(
-        "Riesgo base",
-        f"{base_actual['riesgo']:.2f}%"
-    )
-
-    col3.metric(
-        "Tiempo base",
-        f"{base_actual['tiempo_promedio']:.6f}s"
-    )
-
-else:
-
-    st.warning(
-        "⚠️ Todavía no existe una línea base."
-    )
-
-
-# ============================================================
-# ESTABLECER LÍNEA BASE
-# ============================================================
-
-if st.button("📌 Establecer línea base"):
-
-    if total == 0:
-
-        st.warning(
-            "Debe analizar tráfico antes "
-            "de establecer la línea base."
-        )
-
-    else:
-
-        base = guardar_linea_base(
-            resumen_metricas
-        )
-
-        st.success(
-            "✅ Línea base establecida correctamente."
-        )
-
-        st.json(base)
-
-
-# ============================================================
-# COMPARACIÓN CON LÍNEA BASE
-# ============================================================
-
-if base_actual and total > 0:
-
-    st.markdown(
-        "### 📊 Comparación con Línea Base"
-    )
-
-    diferencia_anomalias = (
-        porcentaje_anomalias
-        - base_actual["porcentaje_anomalias"]
-    )
-
-    diferencia_riesgo = (
-        riesgo
-        - base_actual["riesgo"]
-    )
-
-    diferencia_tiempo = (
-        tiempo_promedio
-        - base_actual["tiempo_promedio"]
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    col1.metric(
-        "Cambio en anomalías",
-        f"{diferencia_anomalias:+.2f}%"
-    )
-
-    col2.metric(
-        "Cambio en riesgo",
-        f"{diferencia_riesgo:+.2f}%"
-    )
-
-    col3.metric(
-        "Cambio en tiempo",
-        f"{diferencia_tiempo:+.6f}s"
-    )
-
-
-# ============================================================
 # REGISTRO DE ALERTAS
 # ============================================================
 
@@ -911,78 +760,6 @@ else:
     st.info(
         "📭 No hay datos en el historial. "
         "Usa el panel lateral para analizar tráfico."
-    )
-
-
-# ============================================================
-# HISTORIAL PERMANENTE DE MÉTRICAS
-# ============================================================
-
-st.markdown(
-    "### 📚 Historial de Mediciones"
-)
-
-historial_metricas = cargar_historial()
-
-
-if historial_metricas:
-
-    df_metricas = pd.DataFrame(
-        historial_metricas
-    )
-
-    st.dataframe(
-        df_metricas,
-        use_container_width=True,
-        hide_index=True
-    )
-
-else:
-
-    st.info(
-        "Todavía no existen mediciones históricas."
-    )
-
-
-# ============================================================
-# GRÁFICA DE EVOLUCIÓN DEL RIESGO
-# ============================================================
-
-if historial_metricas:
-
-    st.markdown(
-        "### 📈 Evolución del Riesgo"
-    )
-
-    df_metricas = pd.DataFrame(
-        historial_metricas
-    )
-
-    if "fecha" in df_metricas.columns:
-
-        st.line_chart(
-            df_metricas.set_index(
-                "fecha"
-            )["riesgo"]
-        )
-
-
-# ============================================================
-# GRÁFICA DE EVOLUCIÓN DE ANOMALÍAS
-# ============================================================
-
-if historial_metricas:
-
-    st.markdown(
-        "### 📈 Evolución de Anomalías"
-    )
-
-    st.line_chart(
-
-        df_metricas.set_index(
-            "fecha"
-        )["porcentaje_anomalias"]
-
     )
 
 
