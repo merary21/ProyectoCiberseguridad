@@ -1,15 +1,15 @@
 {
-    "fecha": "2026-08-15 23:23:21",
+    "fecha": "2026-08-16 08:53:59",
     "ambiente": {
         "sistema_operativo": "Windows 10",
         "python": "3.11.9",
         "framework": "Streamlit",
-        "modo": "Ejecuci\u00f3n local"
+        "modo": "Ejecución local"
     },
     "endpoint": {
         "tipo": "Interfaz Streamlit",
-        "ruta": "SOC-AI / Analizar Tr\u00e1fico",
-        "metodo": "Simulaci\u00f3n de solicitud HTTP"
+        "ruta": "SOC-AI / Analizar Tráfico",
+        "metodo": "Simulación de solicitud HTTP"
     },
     "payload": {
         "ip": "192.168.1.100",
@@ -23,15 +23,17 @@
     "componente_ia": "Isolation Forest",
     "version_componente_ia": "Modelo entrenado - isolation_forest_model.pkl",
     "herramienta": "Streamlit + Python",
-    "cantidad_solicitudes": 3,
-    "anomalias": 3,
+    "cantidad_solicitudes": 2,
+    "anomalias": 2,
     "normales": 0,
-    "alertas": 3,
+    "alertas": 2,
     "errores": 0,
-    "tiempo_promedio": 0.042052899991783,
-    "p50": 0.043087099998956546,
-    "p95": 0.04701280997833237,
-    "tiempo_maximo": 0.047448999976040795,
+    "porcentaje_anomalias": 100.0,
+    "porcentaje_normales": 0.0,
+    "tiempo_promedio": 0.038231150014325976,
+    "p50": 0.038231150014325976,
+    "p95": 0.04070133501663804,
+    "tiempo_maximo": 0.04097580001689494,
     "tasa_error": 0.0,
     "riesgo": 100.0
 }
