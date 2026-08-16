@@ -573,9 +573,11 @@ if btn_analizar:
 
         except Exception as e:
 
-            st.error(
-                f"Error en el análisis: {e}"
-            )
+         metricas.registrar_error()
+
+         st.error(
+             f"Error en el análisis: {e}"
+    )
 
 
 # ============================================================
@@ -674,6 +676,40 @@ with col2:
         "Porcentaje de tráfico normal",
         f"{porcentaje_normales:.2f}%"
     )
+# ============================================================
+# MÉTRICAS DE RENDIMIENTO
+# ============================================================
+
+st.markdown(
+    "### ⚡ Métricas de Rendimiento"
+)
+
+p50 = resumen_metricas["p50"]
+p95 = resumen_metricas["p95"]
+tiempo_maximo = resumen_metricas["tiempo_maximo"]
+tasa_error = resumen_metricas["tasa_error"]
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric(
+    "P50",
+    f"{p50:.6f}s"
+)
+
+col2.metric(
+    "P95",
+    f"{p95:.6f}s"
+)
+
+col3.metric(
+    "Tiempo máximo",
+    f"{tiempo_maximo:.6f}s"
+)
+
+col4.metric(
+    "Tasa de error",
+    f"{tasa_error:.2f}%"
+)
 
 
 # ============================================================

@@ -218,5 +218,53 @@
         "porcentaje_normales": 35.0,
         "tiempo_promedio": 0.16951434999937193,
         "riesgo": 65.0
+    },
+    {
+        "fecha": "2026-08-15 23:22:47",
+        "total_analizado": 1,
+        "anomalias": 1,
+        "normales": 0,
+        "alertas": 1,
+        "errores": 0,
+        "porcentaje_anomalias": 100.0,
+        "porcentaje_normales": 0.0,
+        "tiempo_promedio": 0.03562260000035167,
+        "p50": 0.03562260000035167,
+        "p95": 0.03562260000035167,
+        "tiempo_maximo": 0.03562260000035167,
+        "tasa_error": 0.0,
+        "riesgo": 100.0
+    },
+    {
+        "fecha": "2026-08-15 23:22:48",
+        "total_analizado": 2,
+        "anomalias": 2,
+        "normales": 0,
+        "alertas": 2,
+        "errores": 0,
+        "porcentaje_anomalias": 100.0,
+        "porcentaje_normales": 0.0,
+        "tiempo_promedio": 0.04153579998819623,
+        "p50": 0.04153579998819623,
+        "p95": 0.04685767997725634,
+        "tiempo_maximo": 0.047448999976040795,
+        "tasa_error": 0.0,
+        "riesgo": 100.0
+    },
+    {
+        "fecha": "2026-08-15 23:22:48",
+        "total_analizado": 3,
+        "anomalias": 3,
+        "normales": 0,
+        "alertas": 3,
+        "errores": 0,
+        "porcentaje_anomalias": 100.0,
+        "porcentaje_normales": 0.0,
+        "tiempo_promedio": 0.042052899991783,
+        "p50": 0.043087099998956546,
+        "p95": 0.04701280997833237,
+        "tiempo_maximo": 0.047448999976040795,
+        "tasa_error": 0.0,
+        "riesgo": 100.0
     }
 ]
