@@ -1,0 +1,37 @@
+{
+    "fecha": "2026-08-15 23:23:21",
+    "ambiente": {
+        "sistema_operativo": "Windows 10",
+        "python": "3.11.9",
+        "framework": "Streamlit",
+        "modo": "Ejecuci\u00f3n local"
+    },
+    "endpoint": {
+        "tipo": "Interfaz Streamlit",
+        "ruta": "SOC-AI / Analizar Tr\u00e1fico",
+        "metodo": "Simulaci\u00f3n de solicitud HTTP"
+    },
+    "payload": {
+        "ip": "192.168.1.100",
+        "metodo": "GET",
+        "url": "/index.html",
+        "estado": 200,
+        "tamano": 1500,
+        "hora": 12
+    },
+    "version_codigo": "SOC-AI v1.0",
+    "componente_ia": "Isolation Forest",
+    "version_componente_ia": "Modelo entrenado - isolation_forest_model.pkl",
+    "herramienta": "Streamlit + Python",
+    "cantidad_solicitudes": 3,
+    "anomalias": 3,
+    "normales": 0,
+    "alertas": 3,
+    "errores": 0,
+    "tiempo_promedio": 0.042052899991783,
+    "p50": 0.043087099998956546,
+    "p95": 0.04701280997833237,
+    "tiempo_maximo": 0.047448999976040795,
+    "tasa_error": 0.0,
+    "riesgo": 100.0
+}

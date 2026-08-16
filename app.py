@@ -1,4 +1,7 @@
-# app.py - SISTEMA DE DETECCIÓN DE INTRUSOS
+# ============================================================
+# app.py - SISTEMA DE DETECCIÓN DE INTRUSOS SOC-AI
+# ============================================================
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -8,16 +11,45 @@ from datetime import datetime
 import time
 import requests
 
-# Configuración de página
+from metricas import MetricasSOC
+from linea_base import guardar_linea_base, cargar_linea_base
+from historial import guardar_resultado, cargar_historial
+
+
+# ============================================================
+# CONFIGURACIÓN DE PÁGINA
+# ============================================================
+
 st.set_page_config(
     page_title="🛡️ CiberSeguridad - Monitoreo Puerto 80",
     page_icon="🔒",
     layout="wide",
-    initial_sidebar_state="expanded"  # ← Esto fuerza que esté abierto al iniciar
+    initial_sidebar_state="expanded"
 )
 
-# --- ESTILOS CSS ---
-# --- ESTILOS CSS ---
+
+# ============================================================
+# MÉTRICAS DEL SOC-AI
+# ============================================================
+
+if "metricas_soc" not in st.session_state:
+    st.session_state.metricas_soc = MetricasSOC()
+
+metricas = st.session_state.metricas_soc
+
+
+# ============================================================
+# HISTORIAL DE EVENTOS DE LA SESIÓN
+# ============================================================
+
+if "historial" not in st.session_state:
+    st.session_state.historial = []
+
+
+# ============================================================
+# ESTILOS CSS
+# ============================================================
+
 st.markdown("""
 <style>
 
@@ -27,7 +59,7 @@ st.markdown("""
     color:white;
 }
 
-/* Eliminar línea azul superior y bordes */
+/* Eliminar línea azul superior */
 .stApp > header {
     display: none !important;
     visibility: hidden !important;
@@ -39,7 +71,7 @@ st.markdown("""
     margin-top: 0 !important;
 }
 
-/* Eliminar cualquier borde o línea superior */
+/* Eliminar bordes */
 [data-testid="stAppViewContainer"] {
     border: none !important;
     box-shadow: none !important;
@@ -47,11 +79,6 @@ st.markdown("""
 
 [data-testid="stAppViewContainer"] > .stApp {
     border: none !important;
-}
-
-/* Eliminar línea azul del top */
-#root > div:nth-child(1) > div > div > div > header {
-    display: none !important;
 }
 
 /* Título Principal */
@@ -74,7 +101,9 @@ st.markdown("""
     border:1px solid #334155;
     box-shadow:0 0 15px rgba(0,0,0,.4);
 }
-            section[data-testid="stSidebar"]{
+
+/* Sidebar */
+section[data-testid="stSidebar"]{
     background:#0f172a;
 }
 
@@ -118,33 +147,27 @@ st.markdown("""
     background:linear-gradient(135deg,#16a34a,#166534);
 }
 
-/* ========== OCULTAR ELEMENTOS DE STREAMLIT ========== */
+/* Ocultar elementos de Streamlit */
 
-
-/* Eliminar padding superior */
 .block-container {
     padding-top: 0rem !important;
     margin-top: 0 !important;
 }
 
-/* Eliminar border-top azul */
 [data-testid="stApp"] {
     border-top: none !important;
 }
 
-/* Eliminar cualquier línea o borde superior */
 header[data-testid="stHeader"] {
     display: none !important;
     visibility: hidden !important;
     height: 0 !important;
 }
 
-/* Forzar eliminar línea azul */
 .element-container > div {
     border-top: none !important;
 }
 
-/* Eliminar sombras y bordes del contenedor principal */
 .main .block-container {
     padding-top: 0rem !important;
     margin-top: -1rem !important;
@@ -153,9 +176,21 @@ header[data-testid="stHeader"] {
 </style>
 """, unsafe_allow_html=True)
 
-# --- TÍTULO ---
-st.markdown('<div class="main-header">🛡️ SOC-AI</div>', unsafe_allow_html=True)
-st.markdown("<center><h3>Security Operations Center con Inteligencia Artificial</h3></center>", unsafe_allow_html=True)
+
+# ============================================================
+# TÍTULO
+# ============================================================
+
+st.markdown(
+    '<div class="main-header">🛡️ SOC-AI</div>',
+    unsafe_allow_html=True
+)
+
+st.markdown(
+    "<center><h3>Security Operations Center con Inteligencia Artificial</h3></center>",
+    unsafe_allow_html=True
+)
+
 st.markdown("""
     <div style='text-align:center;
                 background:#1e293b;
@@ -165,122 +200,795 @@ st.markdown("""
                 margin-bottom:20px'>
         🟢 Monitoreo Activo
     </div>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
-# --- CARGA DEL MODELO ---
+
+# ============================================================
+# CARGA DEL MODELO
+# ============================================================
+
 @st.cache_resource
 def cargar_recursos():
+
     if not os.path.exists("modelo_guardado"):
-        return None, None, None, None, "Error: No existe la carpeta modelo_guardado"
+        return None, None, None, None, \
+            "Error: No existe la carpeta modelo_guardado"
+
     try:
-        modelo = joblib.load("modelo_guardado/isolation_forest_model.pkl")
-        scaler = joblib.load("modelo_guardado/scaler.pkl")
-        le_metodo = joblib.load("modelo_guardado/label_encoder_metodo.pkl")
-        metadata = joblib.load("modelo_guardado/metadata.pkl")
+
+        modelo = joblib.load(
+            "modelo_guardado/isolation_forest_model.pkl"
+        )
+
+        scaler = joblib.load(
+            "modelo_guardado/scaler.pkl"
+        )
+
+        le_metodo = joblib.load(
+            "modelo_guardado/label_encoder_metodo.pkl"
+        )
+
+        metadata = joblib.load(
+            "modelo_guardado/metadata.pkl"
+        )
+
         return modelo, scaler, le_metodo, metadata, None
+
     except Exception as e:
-        return None, None, None, None, f"Error al cargar: {e}"
+
+        return None, None, None, None, \
+            f"Error al cargar: {e}"
+
 
 modelo, scaler, le_metodo, metadata, error_msg = cargar_recursos()
 
+
 if error_msg:
+
     st.error(error_msg)
     st.stop()
 
-# --- SIDEBAR: ENTRADA DE DATOS ---
+
+# ============================================================
+# SIDEBAR - ENTRADA DE DATOS
+# ============================================================
+
 with st.sidebar:
+
     st.header("📝 Ingresar Tráfico")
-    st.markdown("Simula una conexión HTTP:")
-    
-    ip = st.text_input("IP Origen", "192.168.1.100")
-    metodo = st.selectbox("Método", ["GET", "POST", "HEAD", "PUT"])
-    url = st.text_input("URL", "/admin/login")
-    estado = st.number_input("Estado HTTP", min_value=100, max_value=599, value=200, step=1)
-    tamano = st.number_input("Tamaño (bytes)", min_value=0, value=1500, step=50)
-    hora = st.slider("Hora del día", 0, 23, 12)
-    
-    btn_analizar = st.button("🔍 Analizar Tráfico", type="primary", use_container_width=True)
 
-# --- HISTORIAL (SESSION STATE) ---
-if 'historial' not in st.session_state:
-    st.session_state.historial = []
+    st.markdown(
+        "Simula una conexión HTTP:"
+    )
 
-# --- LÓGICA DE PREDICCIÓN ---
+    ip = st.text_input(
+        "IP Origen",
+        "192.168.1.100"
+    )
+
+    metodo = st.selectbox(
+        "Método",
+        ["GET", "POST", "HEAD", "PUT"]
+    )
+
+    url = st.text_input(
+        "URL",
+        "/admin/login"
+    )
+
+    estado = st.number_input(
+        "Estado HTTP",
+        min_value=100,
+        max_value=599,
+        value=200,
+        step=1
+    )
+
+    tamano = st.number_input(
+        "Tamaño (bytes)",
+        min_value=0,
+        value=1500,
+        step=50
+    )
+
+    hora = st.slider(
+        "Hora del día",
+        0,
+        23,
+        12
+    )
+
+    btn_analizar = st.button(
+        "🔍 Analizar Tráfico",
+        type="primary",
+        use_container_width=True
+    )
+
+
+# ============================================================
+# LÓGICA DE PREDICCIÓN
+# ============================================================
+
 if btn_analizar:
+
     with st.spinner("Analizando patrones..."):
+
         time.sleep(0.5)
-        
+
         try:
-            # Feature Engineering
+
+            # ------------------------------------------------
+            # FEATURE ENGINEERING
+            # ------------------------------------------------
+
             url_length = len(url)
+
             request_rate = 5.0
+
             base = 1.5 if metodo == "POST" else 0.5
-            duration = base if 200 <= estado < 300 else base * 2.0
-            src_bytes = tamano * 0.1 if metodo == "POST" else tamano * 0.01
+
+            duration = (
+                base
+                if 200 <= estado < 300
+                else base * 2.0
+            )
+
+            src_bytes = (
+                tamano * 0.1
+                if metodo == "POST"
+                else tamano * 0.01
+            )
+
             dst_bytes = tamano
-            num_packets = int((src_bytes + dst_bytes) / 1500) + 1
-            metodo_enc = le_metodo.transform([metodo])[0] if metodo in le_metodo.classes_ else 0
-            
-            url_lower = url.lower()
-            if 'admin' in url_lower or 'wp-admin' in url_lower: 
-                service_enc = 0
-            elif 'login' in url_lower or 'auth' in url_lower: 
-                service_enc = 1
-            elif 'api' in url_lower: 
-                service_enc = 2
-            else: 
-                service_enc = 4
-            
-            if estado == 200: 
-                flag_enc = 0
-            elif estado in [301, 302, 304]: 
-                flag_enc = 1
-            elif estado in [401, 403]: 
-                flag_enc = 2
-            elif estado == 404: 
-                flag_enc = 3
-            else: 
-                flag_enc = 4
-            
-            input_data = [[
-                duration, src_bytes, dst_bytes, num_packets, 
-                url_length, request_rate, estado, 
-                metodo_enc, service_enc, flag_enc, hora
-            ]]
-            
-            # Predicción
-            input_scaled = scaler.transform(input_data)
-            pred = modelo.predict(input_scaled)[0]
-            score = modelo.decision_function(input_scaled)[0]
-            es_anomalo = (pred == -1)
-            
-            # Guardar en historial
-            registro = {
-                "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "Hora": datetime.now().strftime("%H:%M:%S"),
-                "IP": ip,
-                "Método": metodo,
-                "URL": url,
-                "Estado": estado,
-                "Resultado": "🚨 ALERTA" if es_anomalo else "✅ OK",
-                "Score": f"{score:.4f}"
-            }
-            st.session_state.historial.insert(0, registro)
-            
-            # Mostrar Resultado
-            if es_anomalo:
-                st.markdown(f'<div class="alert-box alert-danger">🚨 TRÁFICO ANÓMALO DETECTADO<br>Score: {score:.4f}</div>', unsafe_allow_html=True)
-                st.warning(f"**Recomendación:** La IP `{ip}` presenta comportamiento sospechoso accediendo a `{url}`.")
+
+            num_packets = int(
+                (src_bytes + dst_bytes) / 1500
+            ) + 1
+
+            if metodo in le_metodo.classes_:
+
+                metodo_enc = le_metodo.transform(
+                    [metodo]
+                )[0]
+
             else:
-                st.markdown(f'<div class="alert-box alert-success">✅ Tráfico Normal<br>Score: {score:.4f}</div>', unsafe_allow_html=True)
-                st.success("El tráfico se encuentra dentro de los parámetros normales.")
+
+                metodo_enc = 0
+
+
+            # ------------------------------------------------
+            # CODIFICACIÓN DEL SERVICIO
+            # ------------------------------------------------
+
+            url_lower = url.lower()
+
+            if "admin" in url_lower or "wp-admin" in url_lower:
+
+                service_enc = 0
+
+            elif "login" in url_lower or "auth" in url_lower:
+
+                service_enc = 1
+
+            elif "api" in url_lower:
+
+                service_enc = 2
+
+            else:
+
+                service_enc = 4
+
+
+            # ------------------------------------------------
+            # CODIFICACIÓN DEL ESTADO HTTP
+            # ------------------------------------------------
+
+            if estado == 200:
+
+                flag_enc = 0
+
+            elif estado in [301, 302, 304]:
+
+                flag_enc = 1
+
+            elif estado in [401, 403]:
+
+                flag_enc = 2
+
+            elif estado == 404:
+
+                flag_enc = 3
+
+            else:
+
+                flag_enc = 4
+
+
+            # ------------------------------------------------
+            # DATOS PARA EL MODELO
+            # ------------------------------------------------
+
+            input_data = [[
+                duration,
+                src_bytes,
+                dst_bytes,
+                num_packets,
+                url_length,
+                request_rate,
+                estado,
+                metodo_enc,
+                service_enc,
+                flag_enc,
+                hora
+            ]]
+
+
+            # =================================================
+            # PREDICCIÓN Y MEDICIÓN
+            # =================================================
+
+            input_scaled = scaler.transform(
+                input_data
+            )
+
+            # Inicio de medición
+            inicio = time.perf_counter()
+
+            # Predicción
+            pred = modelo.predict(
+                input_scaled
+            )[0]
+
+            # Score
+            score = modelo.decision_function(
+                input_scaled
+            )[0]
+
+            # Fin de medición
+            fin = time.perf_counter()
+
+            # Tiempo de procesamiento
+            tiempo_procesamiento = fin - inicio
+
+            # Determinar anomalía
+            es_anomalo = (pred == -1)
+
+
+            # =================================================
+            # REGISTRAR MÉTRICAS
+            # =================================================
+
+            metricas.registrar_resultado(
+                es_anomalo,
+                tiempo_procesamiento
+            )
+
+            resumen_metricas = (
+                metricas.obtener_resumen()
+            )
+
+
+            # =================================================
+            # GUARDAR HISTORIAL DE MÉTRICAS
+            # =================================================
+
+            guardar_resultado(
+                resumen_metricas
+            )
+
+
+            # =================================================
+            # REGISTRO DEL EVENTO
+            # =================================================
+
+            registro = {
+
+                "Fecha":
+                    datetime.now().strftime(
+                        "%d/%m/%Y %H:%M:%S"
+                    ),
+
+                "Hora":
+                    datetime.now().strftime(
+                        "%H:%M:%S"
+                    ),
+
+                "IP":
+                    ip,
+
+                "Método":
+                    metodo,
+
+                "URL":
+                    url,
+
+                "Estado":
+                    estado,
+
+                "Resultado":
+                    "🚨 ALERTA"
+                    if es_anomalo
+                    else "✅ OK",
+
+                "Score":
+                    f"{score:.4f}",
+
+                "Tiempo (s)":
+                    f"{tiempo_procesamiento:.6f}"
+            }
+
+
+            st.session_state.historial.insert(
+                0,
+                registro
+            )
+
+
+            # =================================================
+            # MOSTRAR RESULTADO
+            # =================================================
+
+            if es_anomalo:
+
+                st.markdown(
+                    f'''
+                    <div class="alert-box alert-danger">
+                        🚨 TRÁFICO ANÓMALO DETECTADO
+                        <br>
+                        Score: {score:.4f}
+                        <br>
+                        Tiempo: {tiempo_procesamiento:.6f}s
+                    </div>
+                    ''',
+                    unsafe_allow_html=True
+                )
+
+                st.warning(
+                    f"**Recomendación:** "
+                    f"La IP `{ip}` presenta "
+                    f"comportamiento sospechoso "
+                    f"accediendo a `{url}`."
+                )
+
+            else:
+
+                st.markdown(
+                    f'''
+                    <div class="alert-box alert-success">
+                        ✅ Tráfico Normal
+                        <br>
+                        Score: {score:.4f}
+                        <br>
+                        Tiempo: {tiempo_procesamiento:.6f}s
+                    </div>
+                    ''',
+                    unsafe_allow_html=True
+                )
+
+                st.success(
+                    "El tráfico se encuentra "
+                    "dentro de los parámetros normales."
+                )
+
 
         except Exception as e:
-            st.error(f"Error en el análisis: {e}")
 
-# ============================================
+         metricas.registrar_error()
+
+         st.error(
+             f"Error en el análisis: {e}"
+    )
+
+
+# ============================================================
+# OBTENER MÉTRICAS ACTUALES
+# ============================================================
+
+resumen_metricas = (
+    metricas.obtener_resumen()
+)
+
+total = len(
+    st.session_state.historial
+)
+
+alertas = len([
+    x
+    for x in st.session_state.historial
+    if "ALERTA" in x["Resultado"]
+])
+
+normales = total - alertas
+
+riesgo = (
+    (alertas / total) * 100
+    if total > 0
+    else 0
+)
+
+tiempo_promedio = (
+    resumen_metricas["tiempo_promedio"]
+)
+
+porcentaje_anomalias = (
+    resumen_metricas["porcentaje_anomalias"]
+)
+
+porcentaje_normales = (
+    resumen_metricas["porcentaje_normales"]
+)
+
+
+# ============================================================
+# TABLERO DE RESULTADOS
+# ============================================================
+
+st.markdown("### 📊 Panel de Monitoreo")
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
+col1.metric(
+    "📊 Eventos Analizados",
+    total
+)
+
+col2.metric(
+    "🚨 Alertas Detectadas",
+    alertas
+)
+
+col3.metric(
+    "✅ Tráfico Normal",
+    normales
+)
+
+col4.metric(
+    "⚠️ Riesgo",
+    f"{riesgo:.1f}%"
+)
+
+col5.metric(
+    "⏱️ Tiempo Promedio",
+    f"{tiempo_promedio:.6f}s"
+)
+
+
+# ============================================================
+# INDICADORES DE DETECCIÓN
+# ============================================================
+
+st.markdown(
+    "### 📈 Indicadores de Detección"
+)
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    st.metric(
+        "Porcentaje de anomalías",
+        f"{porcentaje_anomalias:.2f}%"
+    )
+
+with col2:
+
+    st.metric(
+        "Porcentaje de tráfico normal",
+        f"{porcentaje_normales:.2f}%"
+    )
+# ============================================================
+# MÉTRICAS DE RENDIMIENTO
+# ============================================================
+
+st.markdown(
+    "### ⚡ Métricas de Rendimiento"
+)
+
+p50 = resumen_metricas["p50"]
+p95 = resumen_metricas["p95"]
+tiempo_maximo = resumen_metricas["tiempo_maximo"]
+tasa_error = resumen_metricas["tasa_error"]
+
+col1, col2, col3, col4 = st.columns(4)
+
+col1.metric(
+    "P50",
+    f"{p50:.6f}s"
+)
+
+col2.metric(
+    "P95",
+    f"{p95:.6f}s"
+)
+
+col3.metric(
+    "Tiempo máximo",
+    f"{tiempo_maximo:.6f}s"
+)
+
+col4.metric(
+    "Tasa de error",
+    f"{tasa_error:.2f}%"
+)
+
+
+# ============================================================
+# LÍNEA BASE
+# ============================================================
+
+st.markdown("### 📏 Línea Base del SOC-AI")
+
+base_actual = cargar_linea_base()
+
+
+if base_actual:
+
+    st.info(
+        f"📌 Línea base registrada el "
+        f"{base_actual['fecha']}"
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Anomalías base",
+        f"{base_actual['porcentaje_anomalias']:.2f}%"
+    )
+
+    col2.metric(
+        "Riesgo base",
+        f"{base_actual['riesgo']:.2f}%"
+    )
+
+    col3.metric(
+        "Tiempo base",
+        f"{base_actual['tiempo_promedio']:.6f}s"
+    )
+
+else:
+
+    st.warning(
+        "⚠️ Todavía no existe una línea base."
+    )
+
+
+# ============================================================
+# ESTABLECER LÍNEA BASE
+# ============================================================
+
+if st.button("📌 Establecer línea base"):
+
+    if total == 0:
+
+        st.warning(
+            "Debe analizar tráfico antes "
+            "de establecer la línea base."
+        )
+
+    else:
+
+        base = guardar_linea_base(
+            resumen_metricas
+        )
+
+        st.success(
+            "✅ Línea base establecida correctamente."
+        )
+
+        st.json(base)
+
+
+# ============================================================
+# COMPARACIÓN CON LÍNEA BASE
+# ============================================================
+
+if base_actual and total > 0:
+
+    st.markdown(
+        "### 📊 Comparación con Línea Base"
+    )
+
+    diferencia_anomalias = (
+        porcentaje_anomalias
+        - base_actual["porcentaje_anomalias"]
+    )
+
+    diferencia_riesgo = (
+        riesgo
+        - base_actual["riesgo"]
+    )
+
+    diferencia_tiempo = (
+        tiempo_promedio
+        - base_actual["tiempo_promedio"]
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric(
+        "Cambio en anomalías",
+        f"{diferencia_anomalias:+.2f}%"
+    )
+
+    col2.metric(
+        "Cambio en riesgo",
+        f"{diferencia_riesgo:+.2f}%"
+    )
+
+    col3.metric(
+        "Cambio en tiempo",
+        f"{diferencia_tiempo:+.6f}s"
+    )
+
+
+# ============================================================
+# REGISTRO DE ALERTAS
+# ============================================================
+
+st.markdown(
+    "### 🚨 Registro de Alertas"
+)
+
+
+if st.session_state.historial:
+
+    df = pd.DataFrame(
+        st.session_state.historial
+    )
+
+    alertas_df = df[
+        df["Resultado"].str.contains(
+            "ALERTA",
+            na=False
+        )
+    ]
+
+
+    if not alertas_df.empty:
+
+        st.dataframe(
+
+            alertas_df[
+                [
+                    "Fecha",
+                    "IP",
+                    "URL",
+                    "Estado",
+                    "Score",
+                    "Tiempo (s)"
+                ]
+            ],
+
+            use_container_width=True,
+            hide_index=True
+        )
+
+    else:
+
+        st.info(
+            "No hay alertas registradas aún. "
+            "¡El sistema está funcionando correctamente!"
+        )
+
+
+    # ========================================================
+    # HISTORIAL COMPLETO
+    # ========================================================
+
+    st.markdown(
+        "### 📋 Historial Completo"
+    )
+
+
+    def colorear_alerta(valor):
+
+        if "ALERTA" in str(valor):
+
+            return (
+                "background-color:#dc2626;"
+                "color:white"
+            )
+
+        return (
+            "background-color:#16a34a;"
+            "color:white"
+        )
+
+
+    st.dataframe(
+
+        df.style.map(
+            colorear_alerta,
+            subset=["Resultado"]
+        ),
+
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+
+    st.info(
+        "📭 No hay datos en el historial. "
+        "Usa el panel lateral para analizar tráfico."
+    )
+
+
+# ============================================================
+# HISTORIAL PERMANENTE DE MÉTRICAS
+# ============================================================
+
+st.markdown(
+    "### 📚 Historial de Mediciones"
+)
+
+historial_metricas = cargar_historial()
+
+
+if historial_metricas:
+
+    df_metricas = pd.DataFrame(
+        historial_metricas
+    )
+
+    st.dataframe(
+        df_metricas,
+        use_container_width=True,
+        hide_index=True
+    )
+
+else:
+
+    st.info(
+        "Todavía no existen mediciones históricas."
+    )
+
+
+# ============================================================
+# GRÁFICA DE EVOLUCIÓN DEL RIESGO
+# ============================================================
+
+if historial_metricas:
+
+    st.markdown(
+        "### 📈 Evolución del Riesgo"
+    )
+
+    df_metricas = pd.DataFrame(
+        historial_metricas
+    )
+
+    if "fecha" in df_metricas.columns:
+
+        st.line_chart(
+            df_metricas.set_index(
+                "fecha"
+            )["riesgo"]
+        )
+
+
+# ============================================================
+# GRÁFICA DE EVOLUCIÓN DE ANOMALÍAS
+# ============================================================
+
+if historial_metricas:
+
+    st.markdown(
+        "### 📈 Evolución de Anomalías"
+    )
+
+    st.line_chart(
+
+        df_metricas.set_index(
+            "fecha"
+        )["porcentaje_anomalias"]
+
+    )
+
+
+# ============================================================
 # IA LOCAL - LLAMA 3.2
-# ============================================
+# ============================================================
 
 def consultar_llama(pregunta):
 
@@ -309,12 +1017,15 @@ Pregunta:
     try:
 
         response = requests.post(
+
             "http://localhost:11434/api/generate",
+
             json={
                 "model": "llama3.2",
                 "prompt": prompt,
                 "stream": False
             },
+
             timeout=60
         )
 
@@ -322,62 +1033,27 @@ Pregunta:
 
     except Exception as e:
 
-        return f"❌ Error al conectar con Llama 3.2: {str(e)}"
-
-# --- TABLERO DE RESULTADOS ---
-st.markdown("### 📊 Panel de Monitoreo")
-
-total = len(st.session_state.historial)
-alertas = len([x for x in st.session_state.historial if "ALERTA" in x["Resultado"]])
-normales = total - alertas
-riesgo = (alertas/total)*100 if total > 0 else 0
-
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("📊 Eventos Analizados", total)
-col2.metric("🚨 Alertas Detectadas", alertas)
-col3.metric("✅ Tráfico Normal", normales)
-col4.metric("⚠️ Riesgo", f"{riesgo:.1f}%")
-
-# --- REGISTRO DE ALERTAS ---
-st.markdown("### 🚨 Registro de Alertas")
-
-if st.session_state.historial:
-    df = pd.DataFrame(st.session_state.historial)
-    
-    # Filtrar solo alertas
-    alertas_df = df[df["Resultado"].str.contains("ALERTA", na=False)]
-    
-    if not alertas_df.empty:
-        st.dataframe(
-            alertas_df[["Fecha", "IP", "URL", "Estado", "Score"]],
-            use_container_width=True,
-            hide_index=True
+        return (
+            f"❌ Error al conectar "
+            f"con Llama 3.2: {str(e)}"
         )
-    else:
-        st.info("No hay alertas registradas aún. ¡El sistema está funcionando correctamente!")
-    
-    # Tabla completa con colores
-    st.markdown("### 📋 Historial Completo")
-    
-    def colorear_alerta(valor):
-        if "ALERTA" in str(valor):
-            return "background-color:#dc2626;color:white"
-        return "background-color:#16a34a;color:white"
 
-    st.dataframe(
-        df.style.map(colorear_alerta, subset=["Resultado"]),
-        use_container_width=True,
-        hide_index=True
-    )
-else:
-    st.info("📭 No hay datos en el historial. Usa el panel lateral para analizar tráfico.")
 
-# --- ASISTENTE VIRTUAL ---
-st.markdown("### 🤖 Analista SOC Virtual")
+# ============================================================
+# ASISTENTE VIRTUAL - ANÁLISIS DE EVENTOS
+# ============================================================
 
-with st.expander("💬 Haz una pregunta al sistema"):
+st.markdown(
+    "### 🤖 Analista SOC Virtual"
+)
+
+with st.expander(
+    "💬 Haz una pregunta al sistema"
+):
+
     st.markdown("""
     **Ejemplos de preguntas:**
+
     - ¿Qué está pasando en el sistema?
     - ¿Hay tráfico sospechoso?
     - ¿Cuántas alertas hay?
@@ -385,107 +1061,297 @@ with st.expander("💬 Haz una pregunta al sistema"):
     - ¿Resumen del tráfico?
     """)
 
-    pregunta = st.text_input("Escribe tu pregunta:")
 
-    if st.button("Consultar asistente"):
+    pregunta = st.text_input(
+        "Escribe tu pregunta:"
+    )
+
+
+    if st.button(
+        "Consultar asistente"
+    ):
+
         if not st.session_state.historial:
-            st.warning("No hay datos aún para analizar.")
+
+            st.warning(
+                "No hay datos aún para analizar."
+            )
+
         else:
-            df = pd.DataFrame(st.session_state.historial)
+
+            df = pd.DataFrame(
+                st.session_state.historial
+            )
+
             texto = pregunta.lower()
-            
-            alertas_count = len(df[df["Resultado"].str.contains("ALERTA", na=False)])
+
+            alertas_count = len(
+                df[
+                    df["Resultado"].str.contains(
+                        "ALERTA",
+                        na=False
+                    )
+                ]
+            )
+
             total_reg = len(df)
-            normales_count = total_reg - alertas_count
-            
-            top_ips = df["IP"].value_counts().head(3)
-            top_urls = df["URL"].value_counts().head(3)
 
-            if any(x in texto for x in ["qué está pasando", "estado", "resumen", "qué pasa", "sistema"]):
-                respuesta = (f"📊 **Estado del sistema:**\n\n"
-                           f"- Total de eventos: {total_reg}\n"
-                           f"- Tráfico normal: {normales_count}\n"
-                           f"- Alertas detectadas: {alertas_count}\n")
+            normales_count = (
+                total_reg - alertas_count
+            )
 
-            elif any(x in texto for x in ["alerta", "ataque", "sospechoso", "intrusión"]):
-                respuesta = (f"🚨 **Análisis de seguridad:**\n\n"
-                           f"Se han detectado **{alertas_count} posibles eventos sospechosos**.\n"
-                           f"Revisa las IPs con mayor actividad anómala.")
+            top_ips = (
+                df["IP"]
+                .value_counts()
+                .head(3)
+            )
+
+            top_urls = (
+                df["URL"]
+                .value_counts()
+                .head(3)
+            )
+
+
+            if any(
+                x in texto
+                for x in [
+                    "qué está pasando",
+                    "estado",
+                    "resumen",
+                    "qué pasa",
+                    "sistema"
+                ]
+            ):
+
+                respuesta = (
+
+                    f"📊 **Estado del sistema:**\n\n"
+
+                    f"- Total de eventos: "
+                    f"{total_reg}\n"
+
+                    f"- Tráfico normal: "
+                    f"{normales_count}\n"
+
+                    f"- Alertas detectadas: "
+                    f"{alertas_count}\n"
+                )
+
+
+            elif any(
+                x in texto
+                for x in [
+                    "alerta",
+                    "ataque",
+                    "sospechoso",
+                    "intrusión"
+                ]
+            ):
+
+                respuesta = (
+
+                    f"🚨 **Análisis de seguridad:**\n\n"
+
+                    f"Se han detectado "
+                    f"**{alertas_count} posibles "
+                    f"eventos sospechosos**.\n"
+
+                    f"Revisa las IPs con mayor "
+                    f"actividad anómala."
+                )
+
 
             elif "ip" in texto:
-                respuesta = "🌐 **IPs más activas:**\n\n" + "\n".join(
-                    [f"- {ip}: {count} eventos" for ip, count in top_ips.items()])
+
+                respuesta = (
+                    "🌐 **IPs más activas:**\n\n"
+                    +
+                    "\n".join(
+                        [
+                            f"- {ip}: "
+                            f"{count} eventos"
+                            for ip, count
+                            in top_ips.items()
+                        ]
+                    )
+                )
+
 
             elif "url" in texto:
-                respuesta = "🔗 **URLs más consultadas:**\n\n" + "\n".join(
-                    [f"- {url}: {count} veces" for url, count in top_urls.items()])
 
-            elif any(x in texto for x in ["ayuda", "qué puedo preguntar", "como usar"]):
-                respuesta = ("🧠 **Puedes preguntarme:**\n\n"
-                           "- Estado del sistema\n"
-                           "- Alertas detectadas\n"
-                           "- IPs más activas\n"
-                           "- URLs más consultadas")
+                respuesta = (
+                    "🔗 **URLs más consultadas:**\n\n"
+                    +
+                    "\n".join(
+                        [
+                            f"- {url}: "
+                            f"{count} veces"
+                            for url, count
+                            in top_urls.items()
+                        ]
+                    )
+                )
+
+
+            elif any(
+                x in texto
+                for x in [
+                    "ayuda",
+                    "qué puedo preguntar",
+                    "como usar"
+                ]
+            ):
+
+                respuesta = (
+                    "🧠 **Puedes preguntarme:**\n\n"
+                    "- Estado del sistema\n"
+                    "- Alertas detectadas\n"
+                    "- IPs más activas\n"
+                    "- URLs más consultadas"
+                )
+
+
             else:
-                respuesta = (f"🤖 **¡Hola! Soy SOC-AI, tu asistente virtual de ciberseguridad.**\n\n"
-                            f"Soy una inteligencia artificial diseñada para ayudarte a:\n"
-                          f"💡 **Puedes preguntarme cosas como:**\n"
-                            "- *¿Qué está pasando en el sistema?*\n"
-                            "- *¿Hay tráfico sospechoso?*\n"
-                            "- *¿Cuántas alertas hay?*\n"
-                            "- *¿Qué IPs son las más activas?*\n"
-                            "- *¿Qué URLs han sido más consultadas?*\n"
-                            "- *¿Hay ataques detectados?*\n\n"
-                            "¡Estoy aquí para ayudarte a mantener tu red segura! 🔒"
-                        )
+
+                respuesta = (
+
+                    "🤖 **¡Hola! Soy SOC-AI, "
+                    "tu asistente virtual "
+                    "de ciberseguridad.**\n\n"
+
+                    "Soy una inteligencia artificial "
+                    "diseñada para ayudarte a:\n\n"
+
+                    "💡 **Puedes preguntarme cosas "
+                    "como:**\n"
+
+                    "- *¿Qué está pasando "
+                    "en el sistema?*\n"
+
+                    "- *¿Hay tráfico sospechoso?*\n"
+
+                    "- *¿Cuántas alertas hay?*\n"
+
+                    "- *¿Qué IPs son las más activas?*\n"
+
+                    "- *¿Qué URLs han sido más "
+                    "consultadas?*\n"
+
+                    "- *¿Hay ataques detectados?*\n\n"
+
+                    "¡Estoy aquí para ayudarte "
+                    "a mantener tu red segura! 🔒"
+                )
 
 
-            st.chat_message("user").write(pregunta)
-            st.chat_message("assistant").write(respuesta)
-# ============================================
-# ASISTENTE DE CIBERSEGURIDAD IA
-# ============================================
+            st.chat_message(
+                "user"
+            ).write(pregunta)
+
+            st.chat_message(
+                "assistant"
+            ).write(respuesta)
+
+
+# ============================================================
+# ASISTENTE DE CIBERSEGURIDAD IA - LLAMA 3.2
+# ============================================================
 
 st.markdown("---")
 
-st.subheader("🤖 Asistente de Ciberseguridad IA")
+st.subheader(
+    "🤖 Asistente de Ciberseguridad IA"
+)
 
 st.info(
-    "Consulta sobre URLs, IPs, ataques, vulnerabilidades y eventos sospechosos."
+    "Consulta sobre URLs, IPs, ataques, "
+    "vulnerabilidades y eventos sospechosos."
 )
 
+
 pregunta_ia = st.text_area(
+
     "Escribe tu consulta:",
+
     height=120,
-    placeholder="Ejemplo: ¿La URL /wp-admin.php puede indicar un ataque?"
+
+    placeholder=(
+        "Ejemplo: ¿La URL /wp-admin.php "
+        "puede indicar un ataque?"
+    )
 )
+
 
 if st.button("Consultar IA"):
 
     if pregunta_ia.strip() == "":
 
-        st.warning("Ingrese una pregunta.")
+        st.warning(
+            "Ingrese una pregunta."
+        )
 
     else:
 
-        with st.spinner("Analizando consulta..."):
+        with st.spinner(
+            "Analizando consulta..."
+        ):
 
-            respuesta = consultar_llama(pregunta_ia)
+            respuesta = consultar_llama(
+                pregunta_ia
+            )
 
-        st.chat_message("user").write(pregunta_ia)
 
-        st.chat_message("assistant").write(respuesta)
+        st.chat_message(
+            "user"
+        ).write(pregunta_ia)
 
-# --- FOOTER ---
+
+        st.chat_message(
+            "assistant"
+        ).write(respuesta)
+
+
+# ============================================================
+# INFORMACIÓN DEL SISTEMA
+# ============================================================
+
 st.markdown("---")
-st.markdown("## 🧠 Información del Sistema")
+
+st.markdown(
+    "## 🧠 Información del Sistema"
+)
 
 col1, col2, col3 = st.columns(3)
-with col1:
-    st.info("Modelo IA\n\nIsolation Forest")
-with col2:
-    st.info("Dataset\n\n3,000 registros")
-with col3:
-    st.info("Objetivo\n\nDetección de anomalías")
 
-st.caption("SOC-AI | Sistema Inteligente de Ciberseguridad Preventiva | Detección de Anomalías con Isolation Forest")
+
+with col1:
+
+    st.info(
+        "Modelo IA\n\n"
+        "Isolation Forest"
+    )
+
+
+with col2:
+
+    st.info(
+        "Dataset\n\n"
+        "3,000 registros"
+    )
+
+
+with col3:
+
+    st.info(
+        "Objetivo\n\n"
+        "Detección de anomalías"
+    )
+
+
+st.caption(
+    "SOC-AI | Sistema Inteligente de "
+    "Ciberseguridad Preventiva | "
+    "Detección de Anomalías con "
+    "Isolation Forest"
+)
