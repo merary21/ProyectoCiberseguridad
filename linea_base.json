@@ -1,0 +1,11 @@
+{
+    "fecha": "2026-08-15 23:05:25",
+    "total_analizado": 20,
+    "anomalias": 13,
+    "normales": 7,
+    "alertas": 13,
+    "porcentaje_anomalias": 65.0,
+    "porcentaje_normales": 35.0,
+    "tiempo_promedio": 0.16951434999937193,
+    "riesgo": 65.0
+}
