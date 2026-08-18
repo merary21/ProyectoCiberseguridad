@@ -11,9 +11,11 @@
     --text-muted: #94a3b8;
     --border-color: #e2e8f0;
     
-    --accent-primary: #4f46e5;
-    --accent-primary-hover: #4338ca;
-    --accent-primary-light: #eef2ff;
+    /* Azul profesional no saturado - Steel Blue */
+    --accent-primary: #5B8DBE;
+    --accent-primary-hover: #4A7BA7;
+    --accent-primary-light: #E8F1F8;
+    --accent-primary-dark: #3A6B97;
     
     --success-bg: #dcfce7; --success-text: #166534;
     --warning-bg: #fef9c3; --warning-text: #854d0e;
@@ -68,15 +70,45 @@ body {
 .logo-icon {
     width: 40px;
     height: 40px;
-    background: var(--accent-primary);
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
     color: white;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    box-shadow: 0 2px 4px rgba(91, 141, 190, 0.3);
+    position: relative;
+    overflow: hidden;
 }
 
-.logo-text h1 { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+/* Efecto de brillo sutil en el logo */
+.logo-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.logo:hover .logo-icon::before {
+    left: 100%;
+}
+
+.logo-text h1 { 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--accent-primary-dark) 0%, var(--accent-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 .logo-text span { font-size: 12px; color: var(--text-muted); font-weight: 500; }
 
 .nav-menu { list-style: none; padding: 16px 12px; flex: 1; }
@@ -101,13 +133,14 @@ body {
 
 .nav-link:hover {
     background: var(--bg-tertiary);
-    color: var(--text-primary);
+    color: var(--accent-primary-dark);
 }
 
 .nav-link.active {
     background: var(--accent-primary-light);
-    color: var(--accent-primary);
-    border-color: rgba(79, 70, 229, 0.1);
+    color: var(--accent-primary-dark);
+    border-color: rgba(91, 141, 190, 0.2);
+    font-weight: 600;
 }
 
 .sidebar-footer {
@@ -173,12 +206,14 @@ body {
     padding: 24px;
     transition: all 0.2s ease;
     box-shadow: var(--shadow-sm);
+    border-top: 3px solid transparent;
 }
 
 .metric-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
-    border-color: #cbd5e1;
+    border-color: var(--accent-primary);
+    border-top-color: var(--accent-primary);
 }
 
 .metric-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
@@ -191,13 +226,29 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.2s ease;
 }
+
+.metric-card:hover .metric-icon {
+    transform: scale(1.1);
+}
+
 .bg-blue { background: var(--info-bg); color: var(--info-text); }
 .bg-red { background: var(--danger-bg); color: var(--danger-text); }
 .bg-green { background: var(--success-bg); color: var(--success-text); }
 .bg-orange { background: var(--warning-bg); color: var(--warning-text); }
 
-.metric-value { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+.metric-value { 
+    font-size: 32px; 
+    font-weight: 700; 
+    color: var(--accent-primary-dark);
+    transition: color 0.2s ease;
+}
+
+.metric-card:hover .metric-value {
+    color: var(--accent-primary);
+}
+
 .metric-description { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 
 /* =========================================================
@@ -252,11 +303,18 @@ body {
 
 .form-control:focus {
     border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    box-shadow: 0 0 0 3px rgba(91, 141, 190, 0.15);
     background: var(--bg-secondary);
 }
 
-.form-range { width: 100%; margin-top: 8px; accent-color: var(--accent-primary); }
+.form-range { 
+    width: 100%; 
+    margin-top: 8px; 
+    accent-color: var(--accent-primary);
+    height: 6px;
+    border-radius: 3px;
+    background: var(--bg-tertiary);
+}
 
 .btn {
     display: inline-flex;
@@ -274,11 +332,15 @@ body {
 }
 
 .btn-primary {
-    background: var(--accent-primary);
+    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-primary-dark) 100%);
     color: white;
-    box-shadow: 0 1px 2px rgba(79, 70, 229, 0.2);
+    box-shadow: 0 2px 4px rgba(91, 141, 190, 0.3);
 }
-.btn-primary:hover { background: var(--accent-primary-hover); transform: translateY(-1px); }
+.btn-primary:hover { 
+    background: linear-gradient(135deg, var(--accent-primary-hover) 0%, var(--accent-primary) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(91, 141, 190, 0.4);
+}
 .btn-primary:active { transform: translateY(0); }
 .btn-primary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 
@@ -318,6 +380,7 @@ tbody tr:hover { background: var(--bg-tertiary); }
     color: var(--text-primary);
     line-height: 1.7;
     font-size: 14px;
+    border-left: 4px solid var(--accent-primary);
 }
 
 .info-box {
@@ -330,8 +393,20 @@ tbody tr:hover { background: var(--bg-tertiary); }
 }
 
 .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.info-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 24px; text-align: center; }
-.info-card h3 { font-size: 16px; margin: 12px 0 8px; }
+.info-card { 
+    background: var(--bg-secondary); 
+    border: 1px solid var(--border-color); 
+    border-radius: var(--radius); 
+    padding: 24px; 
+    text-align: center;
+    transition: all 0.2s ease;
+}
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--accent-primary);
+}
+.info-card h3 { font-size: 16px; margin: 12px 0 8px; color: var(--accent-primary-dark); }
 .info-card p { color: var(--text-secondary); font-size: 14px; }
 
 .hidden { display: none !important; }
