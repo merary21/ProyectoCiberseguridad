@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- En el <head> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <!-- Contenedor de Notificaciones (Toast) -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <div class="logo-text">
+                    <h1>SOC-AI</h1>
+                    <span>Security Operations</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-link active" data-section="trafico" onclick="mostrarSeccion('trafico')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    <span>Monitoreo de Tráfico</span>
+                </button>
+                <button class="nav-link" data-section="alertas" onclick="mostrarSeccion('alertas')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>Alertas</span>
+                </button>
+                <button class="nav-link" data-section="analista" onclick="mostrarSeccion('analista')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>Analista SOC</span>
+                </button>
+                <button class="nav-link" data-section="ia" onclick="mostrarSeccion('ia')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <span>Asistente IA</span>
+                </button>
+                <button class="nav-link" data-section="sistema" onclick="mostrarSeccion('sistema')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span>Información del Sistema</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Sistema Operativo</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="page-title">
+                    <h2 id="header-title">Monitoreo de Tráfico</h2>
+                    <p id="header-subtitle">Analiza solicitudes HTTP en tiempo real con IA.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="cargarEstado()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                        Sincronizar
+                    </button>
+                </div>
+            </header>
+
+            <!-- TARJETAS DE MÉTRICAS -->
+            <section class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Eventos Analizados</span>
+                        <div class="metric-icon bg-blue">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="totalEventos">0</div>
+                    <div class="metric-description">Total histórico</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Alertas Detectadas</span>
+                        <div class="metric-icon bg-red">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="totalAlertas">0</div>
+                    <div class="metric-description">Requieren atención</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Tráfico Normal</span>
+                        <div class="metric-icon bg-green">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="totalNormales">0</div>
+                    <div class="metric-description">Sin anomalías</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <span class="metric-title">Nivel de Riesgo</span>
+                        <div class="metric-icon bg-orange">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="nivelRiesgo">0%</div>
+                    <div class="metric-description">Basado en análisis reciente</div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: TRÁFICO -->
+            <section id="trafico" class="content-section active">
+                <div class="panel-grid">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>Simulación de Tráfico HTTP</h3>
+                        </div>
+                        <form id="trafficForm" class="form-grid">
+                            <div class="form-group">
+                                <label for="ip">IP Origen</label>
+                                <input type="text" id="ip" name="ip" class="form-control" value="192.168.1.100" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="metodo">Método HTTP</label>
+                                <select id="metodo" name="metodo" class="form-control">
+                                    <option value="GET">GET</option>
+                                    <option value="POST">POST</option>
+                                    <option value="HEAD">HEAD</option>
+                                    <option value="PUT">PUT</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="url">URL Solicitada</label>
+                                <input type="text" id="url" name="url" class="form-control" value="/admin/login" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="estado">Código de Estado</label>
+                                <input type="number" id="estado" name="estado" class="form-control" min="100" max="599" value="200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tamano">Tamaño (bytes)</label>
+                                <input type="number" id="tamano" name="tamano" class="form-control" min="0" value="1500" required>
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="hora">Hora del día: <strong id="horaValor">12</strong></label>
+                                <input type="range" id="hora" name="hora" class="form-range" min="0" max="23" value="12" oninput="document.getElementById('horaValor').textContent = this.value">
+                            </div>
+                            <div class="form-group full-width">
+                                <button type="submit" class="btn btn-primary" id="btnAnalizar">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    Analizar Tráfico
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="panel result-panel">
+                        <div class="panel-header">
+                            <h3>Resultado del Análisis</h3>
+                        </div>
+                        <div id="resultadoInicial" class="empty-state">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <p>Ingresa los datos del tráfico y presiona "Analizar Tráfico" para obtener una evaluación de la IA.</p>
+                        </div>
+                        <div id="resultadoAnalisis" class="result-container hidden"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ALERTAS -->
+            <section id="alertas" class="content-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Registro de Alertas Recientes</h3>
+                        <button class="btn btn-secondary" onclick="cargarAlertas()">Actualizar</button>
+                    </div>
+                    <div class="table-container">
+                        <div id="alertasContainer">
+                            <div class="empty-state">
+                                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="empty-icon"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <p>No hay alertas registradas en este momento.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ANALISTA SOC -->
+            <section id="analista" class="content-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Analista SOC Virtual</h3>
+                    </div>
+                    <div class="analyst-examples">
+                        <span class="badge badge-info">¿Qué está pasando en el sistema?</span>
+                        <span class="badge badge-info">¿Hay tráfico sospechoso?</span>
+                        <span class="badge badge-info">¿Qué IPs tienen más alertas?</span>
+                    </div>
+                    <form id="analistaForm" class="form-group" style="margin-top: 20px;">
+                        <label for="preguntaAnalista">Escribe tu pregunta</label>
+                        <div style="display: flex; gap: 12px;">
+                            <input type="text" id="preguntaAnalista" class="form-control" placeholder="Ej: ¿Cuál es el estado actual de seguridad?" required>
+                            <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Consultar</button>
+                        </div>
+                    </form>
+                    <div id="respuestaAnalista" class="ai-response hidden" style="margin-top: 20px;"></div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: ASISTENTE IA -->
+            <section id="ia" class="content-section">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Asistente de Ciberseguridad IA</h3>
+                    </div>
+                    <div class="info-box">
+                        💡 Puedes consultar sobre URLs, IPs, ataques, vulnerabilidades, OWASP, SQL Injection, XSS y DDoS.
+                    </div>
+                    <form id="iaForm" class="form-group" style="margin-top: 20px;">
+                        <label for="preguntaIA">Escribe tu consulta técnica</label>
+                        <textarea id="preguntaIA" class="form-control" rows="5" placeholder="Ejemplo: ¿La URL /wp-admin.php puede indicar un ataque de fuerza bruta?" required></textarea>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 12px; align-self: flex-start;">Consultar IA</button>
+                    </form>
+                    <div id="respuestaIA" class="ai-response hidden" style="margin-top: 20px;"></div>
+                </div>
+            </section>
+
+            <!-- SECCIÓN: SISTEMA -->
+            <section id="sistema" class="content-section">
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-icon">🤖</div>
+                        <h3>Modelo de ML</h3>
+                        <p id="infoModelo">Isolation Forest</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🎯</div>
+                        <h3>Objetivo Principal</h3>
+                        <p>Detección de anomalías en tiempo real</p>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-icon">🧠</div>
+                        <h3>Motor de IA</h3>
+                        <p id="infoIA">Llama 3.2</p>
+                    </div>
+                </div>
+                <div class="panel" style="margin-top: 24px;">
+                    <h3>Acerca de SOC-AI</h3>
+                    <p style="color: var(--text-secondary); margin-top: 8px; line-height: 1.6;">
+                        Sistema Inteligente de Ciberseguridad Preventiva diseñado para la detección proactiva de anomalías en tráfico web, combinando aprendizaje automático tradicional con modelos de lenguaje de última generación.
+                    </p>
+                </div>
+            </section>
+
+            <footer class="main-footer">
+                <p>SOC-AI &copy; 2026 | Sistema Inteligente de Ciberseguridad Preventiva</p>
+            </footer>
+        </main>
+    </div>
+
+     <!-- Justo antes de cerrar el </body> -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
