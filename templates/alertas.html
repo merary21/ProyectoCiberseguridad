@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>SOC-AI | Alertas</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         BARRA DE NAVEGACIÓN
+    ====================================================== -->
+
+    <nav class="navbar">
+
+        <div class="nav-brand">
+            🛡️ SOC-AI
+        </div>
+
+        <div class="nav-links">
+
+            <a href="/">
+                🏠 Inicio
+            </a>
+
+            <a href="/alertas" class="active">
+                🚨 Alertas
+            </a>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         CONTENIDO PRINCIPAL
+    ====================================================== -->
+
+    <main class="main-container">
+
+        <!-- ENCABEZADO -->
+
+        <section class="page-header">
+
+            <h1>
+                🚨 Alertas de Seguridad
+            </h1>
+
+            <p>
+                Registro de eventos analizados por el sistema
+                de detección de anomalías.
+            </p>
+
+        </section>
+
+
+        <!-- =================================================
+             RESUMEN
+        ================================================== -->
+
+        <section class="alert-summary">
+
+            <div class="summary-card">
+
+                <span class="summary-icon">
+                    📊
+                </span>
+
+                <div>
+
+                    <span class="summary-title">
+                        Eventos analizados
+                    </span>
+
+                    <strong id="total-eventos">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="summary-card danger">
+
+                <span class="summary-icon">
+                    🚨
+                </span>
+
+                <div>
+
+                    <span class="summary-title">
+                        Alertas detectadas
+                    </span>
+
+                    <strong id="total-alertas">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <div class="summary-card success">
+
+                <span class="summary-icon">
+                    ✅
+                </span>
+
+                <div>
+
+                    <span class="summary-title">
+                        Tráfico normal
+                    </span>
+
+                    <strong id="total-normales">
+                        0
+                    </strong>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             ALERTAS DETECTADAS
+        ================================================== -->
+
+        <section class="content-card">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        🚨 Alertas Detectadas
+                    </h2>
+
+                    <p>
+                        Eventos identificados como posibles
+                        comportamientos anómalos.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div id="alertas-container">
+
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        🔍
+                    </div>
+
+                    <h3>
+                        No hay alertas registradas
+                    </h3>
+
+                    <p>
+                        Cuando el sistema detecte tráfico
+                        anómalo aparecerá aquí.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             HISTORIAL COMPLETO
+        ================================================== -->
+
+        <section class="content-card">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        📋 Historial de Análisis
+                    </h2>
+
+                    <p>
+                        Registro de todo el tráfico procesado
+                        por SOC-AI.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="table-container">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Fecha
+                            </th>
+
+                            <th>
+                                IP
+                            </th>
+
+                            <th>
+                                Método
+                            </th>
+
+                            <th>
+                                URL
+                            </th>
+
+                            <th>
+                                Estado
+                            </th>
+
+                            <th>
+                                Resultado
+                            </th>
+
+                            <th>
+                                Score
+                            </th>
+
+                            <th>
+                                Tiempo
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="historial-body">
+
+                        <tr>
+
+                            <td colspan="8"
+                                class="empty-table">
+
+                                No hay eventos registrados.
+
+                            </td>
+
+                        </tr>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BOTÓN REGRESAR
+        ================================================== -->
+
+        <div class="back-container">
+
+            <a href="/" class="btn-primary">
+                ← Volver al Dashboard
+            </a>
+
+        </div>
+
+    </main>
+
+
+    <!-- =====================================================
+         JAVASCRIPT
+    ====================================================== -->
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+</body>
+
+</html>
