@@ -13,8 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el proyecto
 COPY . .
 
-# Puerto que usa Streamlit
-EXPOSE 8501
+# Puerto que usa Flask
+EXPOSE 5000
 
-# Ejecutar Streamlit
-CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+# Ejecutar la app Flask con Gunicorn
+CMD ["gunicorn", "--preload", "--config", "gunicorn.conf.py", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "app:app"]

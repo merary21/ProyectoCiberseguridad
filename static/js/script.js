@@ -248,37 +248,114 @@ document.getElementById("analistaForm")?.addEventListener("submit", async functi
     e.preventDefault();
     const input = document.getElementById("preguntaAnalista");
     const respuestaDiv = document.getElementById("respuestaAnalista");
-    await consultarIAEndpoint(input.value, respuestaDiv, "/api/ai-analysis");
+    await consultarIAEndpoint(
+    input.value,
+    respuestaDiv,
+    "/api/ai-analysis",
+    "soc"
+);
 });
 
 document.getElementById("iaForm")?.addEventListener("submit", async function(e) {
     e.preventDefault();
     const input = document.getElementById("preguntaIA");
     const respuestaDiv = document.getElementById("respuestaIA");
-    await consultarIAEndpoint(input.value, respuestaDiv, "/api/ai-analysis"); // Ajusta la URL si es diferente
+    await consultarIAEndpoint(
+    input.value,
+    respuestaDiv,
+    "/api/ai-analysis",
+    "ciberseguridad"
+);
 });
+async function consultarIAEndpoint(
+    pregunta,
+    contenedor,
+    url,
+    tipo
+) {
 
-async function consultarIAEndpoint(pregunta, contenedor, url) {
     if (!pregunta.trim()) return;
-    
+
     contenedor.classList.remove("hidden");
-    contenedor.innerHTML = `<div style="display:flex; align-items:center; gap:10px; color:var(--text-muted);"><div class="spinner" style="width:18px; height:18px; border:2px solid var(--border-color); border-top-color:var(--accent-primary); border-radius:50%; animation: spin 0.8s linear infinite;"></div> La IA está procesando tu consulta...</div>`;
+
+    contenedor.innerHTML = `
+        <div style="
+            display:flex;
+            align-items:center;
+            gap:10px;
+            color:var(--text-muted);
+        ">
+            <div
+                class="spinner"
+                style="
+                    width:18px;
+                    height:18px;
+                    border:2px solid var(--border-color);
+                    border-top-color:var(--accent-primary);
+                    border-radius:50%;
+                    animation:spin 0.8s linear infinite;
+                ">
+            </div>
+
+            La IA está procesando tu consulta...
+        </div>
+    `;
 
     try {
-        const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pregunta: pregunta })
-        });
-        const data = await response.json();
-        
-        if (!response.ok) throw new Error(data.error || "No se pudo consultar el analista IA");
 
-        contenedor.innerHTML = `<div style="line-height:1.7;">${formatearRespuestaIA(data.respuesta || data.response || "Sin respuesta.")}</div>`;
-        mostrarToast("Consulta respondida por la IA", "success");
+        const response = await fetch(url, {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                pregunta: pregunta,
+                tipo: tipo
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "No se pudo consultar el analista IA"
+            );
+        }
+
+        contenedor.innerHTML = `
+            <div style="line-height:1.7;">
+                ${formatearRespuestaIA(
+                    data.respuesta ||
+                    data.response ||
+                    "Sin respuesta."
+                )}
+            </div>
+        `;
+
+        mostrarToast(
+            "Consulta respondida por la IA",
+            "success"
+        );
+
     } catch (error) {
-        contenedor.innerHTML = `<div style="color:var(--danger-text);">❌ ${escapeHTML(error.message)}</div>`;
-        mostrarToast("Error en la consulta IA", "error");
+
+        console.error("Error IA:", error);
+
+        contenedor.innerHTML = `
+            <div style="color:var(--danger-text);">
+                ❌ ${escapeHTML(error.message)}
+            </div>
+        `;
+
+        mostrarToast(
+            "Error en la consulta IA",
+            "error"
+        );
     }
 }
 

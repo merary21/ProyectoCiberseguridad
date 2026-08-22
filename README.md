@@ -129,21 +129,39 @@ Después del procesamiento, el sistema genera los siguientes resultados:
 
 - Python 3.11 o superior.
 - Pip.
+- PostgreSQL en ejecución (local o remoto).
 - Ollama instalado.
 - Modelo Llama 3.2 descargado.
 
 ### Levantar el entorno virtual
 
 ```bash
-.venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 ### Instalación de dependencias
 
+```bash
+pip install -r requirements.txt
+```
+
+### Configurar variables de entorno
+
+Copia `.env.example` a `.env` y completa los valores según tu entorno (ver sección 10).
 
 ```bash
-pip install -r test/requirements.txt
+cp .env.example .env
 ```
+
+### Crear la base de datos
+
+Crea en PostgreSQL una base de datos vacía que coincida con el `DATABASE_URL` configurado en `.env`, por ejemplo:
+
+```sql
+CREATE DATABASE soc_ai_db;
+```
+
+Las tablas (`empresas`, `usuarios`) se crean automáticamente al iniciar la aplicación.
 
 ### Descargar el modelo de lenguaje
 
@@ -163,18 +181,28 @@ ollama serve
 python app.py
 ```
 
-Una vez iniciada la aplicación, el usuario podrá acceder a la interfaz web para monitorear el tráfico, visualizar las alertas generadas por el modelo de Inteligencia Artificial y realizar consultas al asistente inteligente.
+Al ingresar por primera vez, la aplicación redirige a la pantalla de inicio de sesión. Es necesario registrar una empresa (`/registro`) antes de poder acceder al panel, monitorear el tráfico, visualizar las alertas generadas por el modelo de Inteligencia Artificial y realizar consultas al asistente inteligente.
+
+### Ejecutar con Docker (alternativa)
+
+```bash
+docker compose up -d --build
+```
+
+Este comando levanta la aplicación, Ollama y PostgreSQL en contenedores independientes. Configura `DB_PASSWORD` y `SECRET_KEY` como variables de entorno antes de ejecutarlo, o edita sus valores por defecto en `docker-compose.yml`.
 
 ---
 
 ## 10. Variables de entorno requeridas
-Las principales variables utilizadas son:
+
+La aplicación no arranca si faltan estas variables (deben definirse en `.env`, ver `.env.example`):
 
 | Variable | Descripción |
 |----------|-------------|
-| OLLAMA_MODEL | Modelo utilizado por Ollama para responder consultas. |
+| DATABASE_URL | Cadena de conexión a PostgreSQL, formato `postgresql://usuario:contrasena@host:5432/basededatos`. |
+| SECRET_KEY | Clave usada por Flask para firmar la sesión del usuario. Debe ser un valor aleatorio y secreto. |
 
-En futuras versiones se incorporarán variables adicionales relacionadas con la conexión a bases de datos, configuraciones de despliegue y servicios externos.
+El modelo de Ollama utilizado por el asistente (`llama3.2`) está definido directamente en el código (`app.py`), no mediante variable de entorno.
 
 ---
 
@@ -206,9 +234,8 @@ Las principales limitaciones identificadas son las siguientes:
 - La aplicación únicamente detecta anomalías y genera alertas, pero no ejecuta acciones automáticas para bloquear ataques.
 - La arquitectura actual aún no cuenta con una API que permita separar la lógica del backend de la interfaz.
 - No se dispone de pruebas automatizadas que permitan validar el correcto funcionamiento del sistema.
-- La aplicación todavía no se encuentra preparada para un despliegue mediante contenedores.
 - No existen mecanismos de monitoreo, métricas o registros (logs) que permitan supervisar el comportamiento de la aplicación.
-- La aplicación no cuenta con autenticación de usuarios ni otras medidas de seguridad para un entorno de producción.
+- Los eventos y alertas de tráfico analizado se almacenan en memoria (no en base de datos), por lo que se pierden al reiniciar la aplicación. Solo el registro de empresas y usuarios persiste en PostgreSQL.
 - La documentación técnica aún debe ampliarse y actualizarse conforme avance el desarrollo del proyecto.
 
 Estas limitaciones representan oportunidades de mejora que serán abordadas progresivamente durante las semanas 2 a 6 del módulo.
@@ -219,13 +246,13 @@ Estas limitaciones representan oportunidades de mejora que serán abordadas prog
 
 Con el propósito de superar las limitaciones identificadas en el prototipo actual, se ha definido el siguiente plan de trabajo:
 
-| Semana | Objetivo | Relación con las limitaciones |
-|---------|----------|-------------------------------|
-| **Semana 2** | Implementar una API inteligente que separe la interfaz del backend y definir los contratos de entrada y salida del sistema. | Soluciona la falta de una arquitectura organizada y mejora la escalabilidad del proyecto. |
-| **Semana 3** | Implementar pruebas unitarias, automatización e integración continua (CI/CD). Además, mejorar el conjunto de datos para fortalecer el rendimiento del modelo de IA. | Reduce errores del sistema y mejora la calidad del modelo de detección. |
-| **Semana 4** | Contenerizar la aplicación utilizando Docker y preparar el entorno de despliegue. | Elimina la dependencia de configuraciones manuales y facilita la instalación del sistema. |
-| **Semana 5** | Incorporar registros (logs), métricas, monitoreo del sistema y optimizar el rendimiento general de la aplicación. | Permite supervisar el funcionamiento del sistema y detectar fallos de forma temprana. |
-| **Semana 6** | Implementar autenticación de usuarios, fortalecer la seguridad, actualizar la documentación técnica y preparar la defensa final del proyecto. | Atiende las limitaciones relacionadas con la seguridad, documentación y presentación del proyecto. |
+| Semana | Objetivo | Relación con las limitaciones | Estado |
+|---------|----------|-------------------------------|--------|
+| **Semana 2** | Implementar una API inteligente que separe la interfaz del backend y definir los contratos de entrada y salida del sistema. | Soluciona la falta de una arquitectura organizada y mejora la escalabilidad del proyecto. | Pendiente |
+| **Semana 3** | Implementar pruebas unitarias, automatización e integración continua (CI/CD). Además, mejorar el conjunto de datos para fortalecer el rendimiento del modelo de IA. | Reduce errores del sistema y mejora la calidad del modelo de detección. | Pendiente |
+| **Semana 4** | Contenerizar la aplicación utilizando Docker y preparar el entorno de despliegue. | Elimina la dependencia de configuraciones manuales y facilita la instalación del sistema. | Completado (`docker-compose.yml` levanta la app, PostgreSQL y Ollama) |
+| **Semana 5** | Incorporar registros (logs), métricas, monitoreo del sistema y optimizar el rendimiento general de la aplicación. | Permite supervisar el funcionamiento del sistema y detectar fallos de forma temprana. | Métricas básicas y línea base implementadas; logs y monitoreo aún pendientes |
+| **Semana 6** | Implementar autenticación de usuarios, fortalecer la seguridad, actualizar la documentación técnica y preparar la defensa final del proyecto. | Atiende las limitaciones relacionadas con la seguridad, documentación y presentación del proyecto. | Autenticación completada (registro e inicio de sesión por empresa, con PostgreSQL); documentación y defensa final pendientes |
 
 Al finalizar estas mejoras, se espera contar con una aplicación más robusta, organizada y preparada para un posible despliegue, manteniendo la capacidad de detectar anomalías mediante Inteligencia Artificial y proporcionando una solución más completa para el monitoreo de aplicaciones web.
 ## API
