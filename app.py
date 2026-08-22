@@ -4,11 +4,19 @@
 
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS # Importante para evitar bloqueos locales
+from flask_login import LoginManager, login_required
+from dotenv import load_dotenv
 import joblib
 import os
+import re
 import time
 from datetime import datetime
 import requests
+
+from models import db, Usuario
+from auth import auth_bp
+
+load_dotenv()
 
 # ============================================================
 # CONFIGURACIÓN DE FLASK
@@ -16,6 +24,28 @@ import requests
 
 app = Flask(__name__)
 CORS(app) # Habilita CORS para evitar errores de conexión desde el frontend
+
+app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+app.register_blueprint(auth_bp)
+
+login_manager = LoginManager()
+login_manager.login_view = "auth.login"
+login_manager.login_message = "Inicia sesión para acceder a SOC-AI."
+login_manager.login_message_category = "error"
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def cargar_usuario(usuario_id):
+    return db.session.get(Usuario, int(usuario_id))
+
+
+with app.app_context():
+    db.create_all()
 
 # ============================================================
 # CONFIGURACIÓN DE RUTAS DE MODELOS
@@ -81,6 +111,7 @@ cargar_recursos()
 # ============================================================
 
 @app.route("/")
+@login_required
 def inicio():
     return render_template("index.html")
 
@@ -108,6 +139,7 @@ def health():
 # ============================================================
 
 @app.route("/api/metrics", methods=["GET"])
+@login_required
 def obtener_metricas():
     return jsonify({
         "total": total_eventos,
@@ -120,6 +152,7 @@ def obtener_metricas():
 # ============================================================
 
 @app.route("/api/alerts", methods=["GET"])
+@login_required
 def obtener_alertas():
     return jsonify({
         "total": len(alertas),
@@ -131,6 +164,7 @@ def obtener_alertas():
 # ============================================================
 
 @app.route("/api/analyze", methods=["POST"])
+@login_required
 def analizar_trafico():
     global total_eventos, total_alertas, total_normales
 
@@ -255,91 +289,310 @@ def analizar_trafico():
 # 5. ASISTENTE IA / ANALISTA (Coincide con JS: /api/ai-analysis)
 # ============================================================
 
+# ============================================================
+# 5. ASISTENTES IA
+# ============================================================
+
 @app.route("/api/ai-analysis", methods=["POST"])
+@login_required
 def asistente_ia_unificado():
+
     try:
         datos = request.get_json()
+
+        if not datos:
+            return jsonify({
+                "ok": False,
+                "error": "No se recibieron datos."
+            }), 400
+
         pregunta = str(datos.get("pregunta", "")).strip()
+        tipo = str(datos.get("tipo", "ciberseguridad")).lower().strip()
 
         if not pregunta:
-            return jsonify({"ok": False, "error": "Ingrese una pregunta."}), 400
+            return jsonify({
+                "ok": False,
+                "error": "Ingrese una pregunta."
+            }), 400
 
-        texto = pregunta.lower()
+        # ========================================================
+        # ASISTENTE DE CIBERSEGURIDAD
+        # ========================================================
+        if tipo == "ciberseguridad":
 
-        # Lógica del Analista SOC (Respuestas rápidas basadas en reglas)
-        if any(p in texto for p in ["qué está pasando", "estado", "resumen", "qué pasa", "sistema"]):
-            respuesta = (
-                f"📊 Estado del sistema:\n\n"
-                f"- Total de eventos: {total_eventos}\n"
-                f"- Tráfico normal: {total_normales}\n"
-                f"- Alertas detectadas: {total_alertas}\n"
-            )
-            return jsonify({"ok": True, "respuesta": respuesta})
+            respuesta = consultar_llama(pregunta)
 
-        elif any(p in texto for p in ["alerta", "ataque", "sospechoso", "intrusión"]):
-            respuesta = f"🚨 Análisis de seguridad:\n\nSe han detectado {total_alertas} posibles eventos sospechosos hasta el momento."
-            return jsonify({"ok": True, "respuesta": respuesta})
+            return jsonify({
+                "ok": True,
+                "respuesta": respuesta,
+                "asistente": "Llama 3.2"
+            })
 
-        elif "ip" in texto:
-            conteo_ips = {}
-            for a in alertas:
-                conteo_ips[a["ip"]] = conteo_ips.get(a["ip"], 0) + 1
-            top_ips = sorted(conteo_ips.items(), key=lambda x: x[1], reverse=True)[:3]
-            
-            if top_ips:
-                respuesta = "🌐 IPs con más alertas:\n\n" + "\n".join([f"- {ip}: {cantidad} alertas" for ip, cantidad in top_ips])
+        # ========================================================
+        # ANALISTA SOC
+        # ========================================================
+        if tipo == "soc":
+
+            texto = pregunta.lower()
+
+            # Estado general del sistema
+            if any(p in texto for p in [
+                "qué está pasando",
+                "estado",
+                "resumen",
+                "qué pasa",
+                "sistema"
+            ]):
+
+                respuesta = (
+                    "📊 Estado del sistema:\n\n"
+                    f"- Total de eventos: {total_eventos}\n"
+                    f"- Tráfico normal: {total_normales}\n"
+                    f"- Alertas detectadas: {total_alertas}"
+                )
+
+                return jsonify({
+                    "ok": True,
+                    "respuesta": respuesta,
+                    "asistente": "Analista SOC"
+                })
+
+            # IP (se evalúa antes que "alertas/ataques" porque preguntas
+            # naturales como "¿qué IP tiene más alertas?" contienen esa
+            # palabra y antes caían siempre en la rama genérica)
+            elif re.search(r"\bip\b", texto):
+
+                conteo_ips = {}
+
+                for alerta in alertas:
+                    ip = alerta.get("ip", "N/A")
+                    conteo_ips[ip] = conteo_ips.get(ip, 0) + 1
+
+                top_ips = sorted(
+                    conteo_ips.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:3]
+
+                if top_ips:
+
+                    respuesta = (
+                        "🌐 IPs con más alertas:\n\n" +
+                        "\n".join(
+                            [
+                                f"- {ip}: {cantidad} alertas"
+                                for ip, cantidad in top_ips
+                            ]
+                        )
+                    )
+
+                else:
+
+                    respuesta = (
+                        "No existen alertas registradas "
+                        "para analizar las IPs."
+                    )
+
+                return jsonify({
+                    "ok": True,
+                    "respuesta": respuesta,
+                    "asistente": "Analista SOC"
+                })
+
+            # URL
+            elif re.search(r"\burl\b", texto):
+
+                conteo_urls = {}
+
+                for alerta in alertas:
+                    url = alerta.get("url", "N/A")
+                    conteo_urls[url] = conteo_urls.get(url, 0) + 1
+
+                top_urls = sorted(
+                    conteo_urls.items(),
+                    key=lambda x: x[1],
+                    reverse=True
+                )[:3]
+
+                if top_urls:
+
+                    respuesta = (
+                        "🔗 URLs asociadas a alertas:\n\n" +
+                        "\n".join(
+                            [
+                                f"- {url}: {cantidad} alertas"
+                                for url, cantidad in top_urls
+                            ]
+                        )
+                    )
+
+                else:
+
+                    respuesta = (
+                        "No existen alertas registradas "
+                        "para analizar las URLs."
+                    )
+
+                return jsonify({
+                    "ok": True,
+                    "respuesta": respuesta,
+                    "asistente": "Analista SOC"
+                })
+
+            # Alertas / ataques (rama genérica, evaluada al final para
+            # no capturar preguntas más específicas de IP o URL)
+            elif any(p in texto for p in [
+                "alerta",
+                "ataque",
+                "sospechoso",
+                "intrusión",
+                "intrusion"
+            ]):
+
+                respuesta = (
+                    "🚨 Análisis de seguridad:\n\n"
+                    f"Se han detectado {total_alertas} "
+                    "posibles eventos sospechosos hasta el momento."
+                )
+
+                return jsonify({
+                    "ok": True,
+                    "respuesta": respuesta,
+                    "asistente": "Analista SOC"
+                })
+
+            # Pregunta del SOC no reconocida
             else:
-                respuesta = "No existen alertas registradas para analizar las IPs."
-            return jsonify({"ok": True, "respuesta": respuesta})
 
-        elif "url" in texto:
-            conteo_urls = {}
-            for a in alertas:
-                conteo_urls[a["url"]] = conteo_urls.get(a["url"], 0) + 1
-            top_urls = sorted(conteo_urls.items(), key=lambda x: x[1], reverse=True)[:3]
-            
-            if top_urls:
-                respuesta = "🔗 URLs asociadas a alertas:\n\n" + "\n".join([f"- {url}: {cantidad} alertas" for url, cantidad in top_urls])
-            else:
-                respuesta = "No existen alertas registradas para analizar las URLs."
-            return jsonify({"ok": True, "respuesta": respuesta})
+                respuesta = (
+                    "No encontré información específica en los datos "
+                    "actuales del SOC para responder esa pregunta."
+                )
 
-        # Si no es una pregunta de estado, consultar a Llama 3.2
-        respuesta = consultar_llama(pregunta)
-        return jsonify({"ok": True, "respuesta": respuesta})
+                return jsonify({
+                    "ok": True,
+                    "respuesta": respuesta,
+                    "asistente": "Analista SOC"
+                })
+
+        # ========================================================
+        # TIPO DESCONOCIDO
+        # ========================================================
+
+        return jsonify({
+            "ok": False,
+            "error": "Tipo de asistente no válido."
+        }), 400
 
     except Exception as e:
-        return jsonify({"ok": False, "error": f"Error en el asistente IA: {str(e)}"}), 500
+
+        return jsonify({
+            "ok": False,
+            "error": f"Error en el asistente IA: {str(e)}"
+        }), 500
 
 # ============================================================
 # FUNCIÓN AUXILIAR: LLAMA 3.2
 # ============================================================
 
 def consultar_llama(pregunta):
-    prompt = f"""
-Eres CyberSOC AI, un asistente especializado en ciberseguridad, OWASP Top 10, 
-SQL Injection, XSS, DDoS, Fuerza Bruta y detección de anomalías.
-Responde de forma profesional, clara y breve a la siguiente consulta de un administrador de sistemas:
 
-Pregunta: {pregunta}
+    prompt = f"""
+Eres CyberSOC AI, un asistente especializado en ciberseguridad.
+
+Tu función es responder preguntas relacionadas con:
+
+- Ciberseguridad
+- Seguridad web
+- OWASP Top 10
+- SQL Injection
+- XSS
+- DDoS
+- Fuerza Bruta
+- Ataques web
+- Vulnerabilidades
+- Seguridad de servidores
+- Redes
+- HTTP y HTTPS
+- Protección de aplicaciones web
+- Detección de anomalías
+
+IMPORTANTE:
+
+Responde directamente la pregunta del usuario.
+
+No inventes alertas del sistema.
+
+No digas que no existen alertas a menos que la pregunta
+específicamente solicite información sobre las alertas del SOC.
+
+Si el usuario pregunta por un concepto de ciberseguridad,
+explícalo claramente.
+
+Si pregunta por riesgos, menciona los principales riesgos
+y después proporciona recomendaciones de seguridad.
+
+Si la pregunta del usuario NO está relacionada con
+ciberseguridad, seguridad informática o los temas listados
+arriba, NO la respondas. En su lugar, indica claramente que
+eres CyberSOC AI, un asistente especializado únicamente en
+ciberseguridad, que ese tema está fuera de tu enfoque, y
+sugiere que reformule su pregunta hacia temas de seguridad
+informática.
+
+Responde en español.
+
+Pregunta del usuario:
+
+{pregunta}
+
+Respuesta:
 """
+
     try:
+
         response = requests.post(
             "http://localhost:11434/api/generate",
-            json={"model": "llama3.2", "prompt": prompt, "stream": False},
+
+            json={
+                "model": "llama3.2",
+                "prompt": prompt,
+                "stream": False
+            },
+
             timeout=60
         )
+
         response.raise_for_status()
-        return response.json().get("response", "No se recibió respuesta de Llama.")
+
+        resultado = response.json()
+
+        return resultado.get(
+            "response",
+            "No se recibió respuesta de Llama 3.2."
+        )
+
     except requests.exceptions.ConnectionError:
-        return "❌ No se pudo conectar con Ollama. Verifique que Ollama esté ejecutándose en localhost:11434."
+
+        return (
+            "❌ No se pudo conectar con Ollama. "
+            "Verifique que Ollama esté ejecutándose "
+            "en localhost:11434."
+        )
+
     except requests.exceptions.Timeout:
-        return "❌ La consulta a Llama 3.2 superó el tiempo de espera."
+
+        return (
+            "❌ La consulta a Llama 3.2 "
+            "superó el tiempo de espera."
+        )
+
     except Exception as e:
+
         return f"❌ Error al conectar con Llama 3.2: {str(e)}"
 
 # ============================================================
-# EJECUCIÓN
+# PUNTO DE ENTRADA
 # ============================================================
 
 if __name__ == "__main__":
